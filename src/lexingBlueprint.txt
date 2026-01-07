@@ -1,0 +1,102 @@
+-- Keywords
+be
+if
+but
+else
+ok
+and
+or
+not
+redo
+quite
+as
+while
+return
+nil
+true
+false
+
+
+-- Symbols
+arithmeticOperator [+\-*/%^]
+relationalOperator [<>!][= ]|"="
+bitwiseOperator [&|~]|"||"|">>"|"<<"
+iden [A-Za-z]+[A-Za-z0-9]*
+whole [0-9]+
+
+
+-- Variable Declaration
+
+varStmt: varDec (';'|'\n')
+       | varTyp (';'|'\n')
+       | varMult (';'|'\n')
+       | varTyps (';'|'\n')
+       | varAssign (';'|'\n')
+
+-- declarations only
+varMult: varTyps be expr	
+       | varTyps be args
+       | varTyp be args
+varAssign: iden (be|assignment) expr
+assignment (arithmeticOperator|bitwiseOperator) be
+-- versatile
+varTyps: varTys varTyp
+varTys: varTyp ',' varTys
+varDecs: varDecl varDec
+       | varDecl varTyp
+varDecl: varDec ',' varDecl
+       | varTyp ',' varDecl
+varDec: varTyp be expr
+varTyp: iden iden
+      | advType iden
+advType: iden '*'
+       | ??
+
+
+-- Generals
+
+block: ':' stmt ok
+args: arg expr
+arg: expr ',' arg
+stmt: varStmt
+    | procCall
+    | ifStmt
+    | loop
+expr: table
+    | funcCall
+    | ??
+
+-- Function Declaration
+
+funcDec: iden decFunc block
+       | advType decFunc block
+decFunc: iden '[' (varDec|varTyp|varDecs) ']'
+
+-- Funtion Call
+
+procCall: funcCall (';'|'\n')
+funcCall: iden '[' (expr|args) ']'
+
+-- If-Else Statement
+
+ifStmt: if {cases}+ ok
+cases: expr caseBlock
+caseBlock: ':' stmt but
+
+-- Looping
+
+loop: loopInfo block
+loopInfo: redo
+        | redo each
+        | redo quiteEach
+each: iden as (varTyp|varTyps)
+    | table as (varTyp|varTyps)
+quiteEach: iden quite as (varTyp|varTyps)
+         | table quite as (varTyp|varTyps)
+
+-- arrays
+
+table: '{' (element|elements) '}'
+elements: repeatElm element
+repeatElm: element ',' repeatElm
+element: expr|varDec|varTyp

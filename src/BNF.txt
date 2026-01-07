@@ -1,16 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-
-
-
-/* DIDDIBLY BNF
 
     ! underived
     <arithmeticOperator>	        ::= '+'|'-'|'*'|'/'|'%'|'^'
     <identifierSymbol>	            ::= '_'|'?'|'@'|'`'|'\'
-    <combinatorSelector>	        ::= ' '|'>'|'+'|'~'|'.'
+    <combinatorSelector>	        ::= <sp>|'>'|'+'|'~'
     <simpleSelector>	            ::= '#'|'.'
     <binaryDigit>		            ::= '0'|'1'
     <octalSubSet>		            ::= %x32-37
@@ -47,7 +39,9 @@
 
     ! keyword
     <and>			                ::= 'a' 'n' 'd'
+    <arg>                           ::= 'a' 'r' 'g' 's'
     <as>			                ::= 'a' 's'
+    <attrib>					::= 'a' 't' 't' 'r' 'i' 'b'
     <be>			                ::= 'b' 'e'
     <const>			                ::= 'c' 'o' 'n' 's' 't'
     <def>			                ::= 'd' 'e' 'f'
@@ -57,6 +51,7 @@
     <for>			                ::= 'f' 'o' 'r'
     <from>			                ::= 'f' 'r' 'o' 'm'
     <if>			                ::= 'i' 'f'
+    <kwarg>                         ::= 'k' 'w' 'a' 'r' 'g' 's'
     <me>			                ::= 'm' 'e'
     <nil>			                ::= 'n' 'i' 'l'
     <not>			                ::= 'n' 'o' 't'
@@ -73,16 +68,20 @@
     <while>			                ::= 'w' 'h' 'i' 'l' 'e'
 
     ! continuation keyword
+    <args>                          ::= '*' <arg>
     <elseif>		                ::= <else> <if>
+    <kwargs>                        ::= '*' '*' <kwarg>
+    <method>			    ::= <me> 't' 'h' 'o' 'd'
 
     ! keyword stuff
     <assignmentOperator>	        ::= [<symbolOperator>] <be>
+    <attributeOperator>             ::= ('~'|'|'|'^'|'$'|'*') <be>
     <booleanOperator>	            ::= <and>|<or>|<not>
     <boolean>		                ::= <true>|<false>
 
     ! valid identifier
-    <upperChar>		                ::= <hexSubSetUpper>|%x47–5A
-    <lowerChar>		                ::= <hexSubSetLower>|%x67–7A
+    <upperChar>		                ::= <hexSubSetUpper>|%x47 5A
+    <lowerChar>		                ::= <hexSubSetLower>|%x67 7A
     <letter>		                ::= <upperChar>|<lowerChar>
     <generalIdentifier>	            ::= (<letter>+|<IdentifierSymbol>+) [<letter>+|<decimalNumbers>|<IdentifierSymbol>+]
     <labelIdentifier>	            ::= '$' <generalIdentifier>
@@ -105,9 +104,9 @@
 
     ! values
     <singleValue>		            ::= <integers>|<strings>|<complexes>|<boolean>
-    <unaryOperation>	            ::= (('~'|'!' [<sp>])|(<not> <sp>)) <singleValue>
-    <operators>		                ::= (<symbolOperator>|<sp> <booleanOperator>) <sp>
-    <resultValue>		            ::= (<unaryOperation>|<value>) [[<sp>] <operators> <resultValue>]
+    <unaryOperation>	            ::= (('~'|'!' [<sp>])|(<sp> <not> <sp>)) <value>
+    <operators>		                ::= <symbolOperator>|<sp> <booleanOperator> <sp>
+    <resultValue>		            ::= '(' (<unaryOperation>|<value>) [[<sp>] <operators> <resultValue>] ')'|(<unaryOperation>|<value>) [[<sp>] <operators> <resultValue>]
     <arrCall>		                ::= <generalIdentifier> [<sp>] '[' [<sp>] <value> [<sp>] ']'
     <validValue>		            ::= <singleValue>|<resultValue>|<labelIdentifier>
     <validNaming>		            ::= <generalIdentifier>|<arrCall>|<attributes>|<procCall>
@@ -143,11 +142,12 @@
     <forClassic>		            ::= {<forLine>} [<sp>] ';' [<sp>] {<value>} [<sp>] ';' [<sp>] {<forLine>}
     <forStatement>		            ::= <for> <sp> (<forEach>|<forClassic>|<value>) [<sp>] ':' [<sp>] <block> <sp> <ok>
     <whileStatement>	            ::= <while> <sp> [<arrCall> [<sp>] ';'] [<sp>] <value> [<sp>] ':' [<sp>] <block> <sp> <ok>
-    <argumentDeclared>	            ::= <fullDeclaration> [<sp>] [',' [<sp>] <argumentDeclared>]
+    <argumentDeclared>	            ::= <fullDeclaration> [<sp>] [',' [<sp>] <argumentDeclared>|<args>|<kwargs>]
     <halfprocStatement>	            ::= <generalIndentifier> [<sp>] '[' [<sp>] <argumentDeclared> [<sp>] ']'
     <procStatement>		            ::= <typeDeclaration> <sp> <halfprocStatement> [<sp>] ':' [<sp>] <block> <sp> <ok>
-    <classSelectors>	            ::= [<simpleSelector>] <generalIdentifier>  [[<sp>] <combinatorSelector> [<sp>] <classSelectors>]
-    <classStatement>	            ::= <classSelectors> [<sp>] ':' [<sp>] {<classLine>} [<sp>] <ok>
+    <classSelectors>	            ::= (<simpleSelector> <generalIdentifier>|<private>|<protected>|<public>|<const>|<static>)  [[<sp>] <combinatorSelector> [<sp>] <classSelectors>]
+    <attributeSelectors>            ::= '[' (<attrib>|<method>) <attributeOperator> <strings> ']'
+    <classStatement>	            ::= (<classSelectors>|'*'|<attributeSelectors>) [<sp>] ':' [<sp>] {<classLine>} [<sp>] <ok>
     <constructStatement>	        ::= <def> <sp> <halfprocStatement> [<sp>] ':' [<sp>] <block> <sp> <ok>
     <statements>		            ::= <declaration>|<procCall>
     <blockStatements>	            ::= <ifStatement>|<forStatement>|<whileStatement>|<classStatement>|<procStatement>|<library>|<label>
@@ -161,87 +161,3 @@
 
     ! library call
     <library>		                ::= [<from> <sp> <fixedString>] <sp> <use> <sp> <fixedString> <sp> <as> <sp> <fixedString>
-
-*/
-
-
-
-// jenis token
-typedef enum type {
-
-    nonToken = '\0',
-    arithmeticOperator,
-    identifierSymbol, combinatorSelector,
-    simpleSelector, binaryDigit,
-    octalSubSet, decimalExtension,
-    hexSubSetUpper, hexSubSetLower,
-    sp, naturalDigit,
-    decimalDigit, octalDigit,
-    hexDigit, relationalOperator,
-    bitwiseOperator,
-    symbolOperator,
-    binaryNumber,
-    octalNumber,
-    hexNumber, decimalNumber,
-    integerNumber, integers,
-    fraction, exponent,
-    floatNumber,
-    imaginaryNumber,
-    complexes, and, as, be,
-    consts, def, each,
-    elses, falses,
-    fors, from, ifs,
-    me, nil, not, ok, or,
-    privates, protecteds, publics,
-    range, returns,
-    statics, trues, use, whiles,
-    elseif, assignmentOperator,
-    booleanOperator, booleans,
-    upperChar, lowerChar,
-    letter, generalIdentifier,
-    labelIdentifier, nonPrintable,
-    quineChar, commentChar, pureChar,
-    escapeChar, escapeSequence,
-    validChar, stringPrefix, quineMark,
-    generalString, fixedString,
-    quineString, prefixedString,
-    strings, singleValue,
-    unaryOperation, operators,
-    resultValue, arrCall,
-    validValue, validNaming,
-    argumentsOf, procCall, elementOf,
-    lists, tuples, sets,
-    dataSequence, attributes, value,
-    dataTypes, dataId,
-    accessModifier, typeDeclaration,
-    halfDeclaration, halfAssignment,
-    halfValueAssign, fullAssignment,
-    fullDeclaration, declaration,
-    elseIfStatement, ifStatement,
-    forLine, forEach, forClassic,
-    forStatement, whileStatement,
-    argumentDeclared, halfprocStatement,
-    procStatement, classSelectors,
-    classStatement, constructStatement,
-    statements, blockStatements,
-    line, classLine, block, label,
-    comment, library
-
-} typeNames;
-
-// pemeriksa token
-bool checkToken[124];
-
-// tipe penyimpan token
-typedef struct Token {
-
-    typeNames tokenType;
-    int tokenRecurred;
-    char* tokenVal;
-    struct Token* recursions;
-
-} tokenCatcher;
-
-
-
-

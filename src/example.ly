@@ -1,0 +1,101 @@
+-- GAMPIL PROGRAMMING LANGUAGE --
+
+NoneType main[list(str) args]:
+
+    printn ["Hello World!"]		-- function call for 'Hello World!'
+
+    int x; x be 3			-- use ';' for one line
+    list(int) num be list [{1, 2, 3}]	-- normal variables
+
+    rax y; y be 7			-- stored at register rax
+    st(0) num2 be 8.76			-- stored at FPU register stack 0
+
+    enc8* letter be {"a", "b"}		-- table type
+
+    printf ["added: %d", add [y, x]]	-- calling declared function
+    printf ["added: %d", add [y, ]]	-- pre-initialized variable can be skipped
+
+    -- if statements
+    if x > 5:
+           printn ["Higher than 5"]	-- first condition, use 'but' to end block
+         but
+       x = 5:
+           printn ["Equal to 5"]	-- second condition
+         but
+       x <= 5:
+           printn ["Less than 5"]	-- if both second and third true, execution would be parallel
+         but				-- these are called 'parallel guard branching'
+
+    -- 
+       parallel guard branching is inspired 
+       by Djikstra's Guard Command Language 
+    --
+
+       else and x >= 5:
+           printn ["Exclusion found!"]	-- use 'else' followed by 'and' keyword to prevent these
+         but
+      ok
+
+     -- need loops! we invented 'redo' loop! --
+
+    redo num as int i:
+        printn ["Looping"]		-- looping exact 3 times
+      ok
+
+    redo num quite as int j:
+        printn ["Looping"]		-- looping 3 times
+        stop				-- but it can stops
+      ok
+
+    redo:
+        if not x >= 0: 			-- loops forever until x less than 0
+            stop
+          but ok
+        x -be 1				-- decrementing x
+      ok
+
+    -- 
+       the block 'redo: if not x >= 0: stop; but ok ...' can be replaced by
+       'redo: while x >= 0; ...' for more conveinence
+    --
+
+    redo: while x < 5
+        x be x + 1
+      ok
+
+    --
+      loops are inspired by BlooP and FlooP
+      by Douglas Hofstadter
+    --
+
+  ok					-- keyword 'ok' to end blocks
+
+
+int add[rax a, int b be 0]:
+    return a + b			-- returning value to function
+  ok
+
+bitOff greet[]:
+    print ["Greetings!"]		-- no return type
+  ok
+
+-- portable types:
+
+   There are bits (bitOff/bitOn), encodings (enc), numbers (num) and rational numbers (rat).
+
+   bit<On or Off>	: length 0 (bitOff) or 1 (bitOn) bit, 0 for void type
+   enc<size>		: length <size> bit
+      size can be 8 to 32 exponentially, unsigned (enc8, enc16, enc32)
+   num<size>		: length <size> bit
+      size can be 16 to 64 exponentially, but signed (num16, num32, num64)
+   rat<size>		: length <size> bit
+      size can be 32 to 128 exponentially (rat32, rat64, rat128)
+   <type>*		: array type (sizes are inferenced)
+
+--
+
+       
+
+
+   
+
