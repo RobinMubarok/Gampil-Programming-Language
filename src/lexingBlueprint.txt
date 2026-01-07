@@ -1,4 +1,5 @@
 -- Keywords
+
 be
 if
 but
@@ -16,22 +17,26 @@ nil
 true
 false
 
+-- Comments
+
+oneLiner "--" {comment} "\n"
+multiline "--" {comment} "--"
 
 -- Symbols
+
 arithmeticOperator [+\-*/%^]
 relationalOperator [<>!][= ]|"="
 bitwiseOperator [&|~]|"||"|">>"|"<<"
 iden [A-Za-z]+[A-Za-z0-9]*
 whole [0-9]+
 
-
 -- Variable Declaration
 
-varStmt: varDec (';'|'\n')
-       | varTyp (';'|'\n')
-       | varMult (';'|'\n')
-       | varTyps (';'|'\n')
-       | varAssign (';'|'\n')
+varStmt: varDec 
+       | varTyp
+       | varMult 
+       | varTyps 
+       | varAssign 
 
 -- declarations only
 varMult: varTyps be expr	
@@ -39,6 +44,7 @@ varMult: varTyps be expr
        | varTyp be args
 varAssign: iden (be|assignment) expr
 assignment (arithmeticOperator|bitwiseOperator) be
+
 -- versatile
 varTyps: varTys varTyp
 varTys: varTyp ',' varTys
@@ -58,13 +64,22 @@ advType: iden '*'
 block: ':' stmt ok
 args: arg expr
 arg: expr ',' arg
-stmt: varStmt
-    | procCall
-    | ifStmt
-    | loop
-expr: table
+imutstmt: varStmt
+        | funcCall
+        | whileLine
+        | ??
+mutstmt: ifStmt
+       | loop
+       | ??
+stmt: imutStmt (';'|'\n')
+    | mutStmt
+expr: mut
+    | imut
     | funcCall
     | ??
+mut: table
+   | ??
+imut: ??
 
 -- Function Declaration
 
@@ -74,13 +89,13 @@ decFunc: iden '[' (varDec|varTyp|varDecs) ']'
 
 -- Funtion Call
 
-procCall: funcCall (';'|'\n')
-funcCall: iden '[' (expr|args) ']'
+funcCall: expr '[' (expr|args) ']'
+        | iden '[' (expr|args) ']'
 
 -- If-Else Statement
 
 ifStmt: if {cases}+ ok
-cases: expr caseBlock
+cases: imut caseBlock
 caseBlock: ':' stmt but
 
 -- Looping
@@ -93,6 +108,7 @@ each: iden as (varTyp|varTyps)
     | table as (varTyp|varTyps)
 quiteEach: iden quite as (varTyp|varTyps)
          | table quite as (varTyp|varTyps)
+whileLine: while imut
 
 -- arrays
 
