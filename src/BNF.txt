@@ -41,7 +41,7 @@
     <and>			                ::= 'a' 'n' 'd'
     <arg>                           ::= 'a' 'r' 'g' 's'
     <as>			                ::= 'a' 's'
-    <attrib>					::= 'a' 't' 't' 'r' 'i' 'b'
+    <attrib>                        ::= 'a' 't' 't' 'r' 'i' 'b'
     <be>			                ::= 'b' 'e'
     <const>			                ::= 'c' 'o' 'n' 's' 't'
     <def>			                ::= 'd' 'e' 'f'
@@ -71,7 +71,7 @@
     <args>                          ::= '*' <arg>
     <elseif>		                ::= <else> <if>
     <kwargs>                        ::= '*' '*' <kwarg>
-    <method>			    ::= <me> 't' 'h' 'o' 'd'
+    <method>			            ::= <me> 't' 'h' 'o' 'd'
 
     ! keyword stuff
     <assignmentOperator>	        ::= [<symbolOperator>] <be>
