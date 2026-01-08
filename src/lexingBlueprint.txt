@@ -19,13 +19,15 @@ false
 
 -- Comments
 
-oneLiner "--" {comment} "\n"
-multiline "--" {comment} "--"
+singleComment "<-".*
+multiComment [<][~][^~]*[~]+([^~><][^~]*[~]+)*[>] 
+Source from https://stackoverflow.com/questions/25395251/detecting-and-skipping-line-comments-with-flex
 
 -- Symbols
 
+assignment ({arithmeticOperator}|{bitwiseOperator})"be"
 arithmeticOperator [+\-*/%^]
-relationalOperator [<>!][= ]|"="
+relationalOperator [<>!][=]?|"="
 bitwiseOperator [&|~]|"||"|">>"|"<<"
 iden [A-Za-z]+[A-Za-z0-9]*
 whole [0-9]+
@@ -43,7 +45,6 @@ varMult: varTyps be expr
        | varTyps be args
        | varTyp be args
 varAssign: iden (be|assignment) expr
-assignment (arithmeticOperator|bitwiseOperator) be
 
 -- versatile
 varTyps: varTys varTyp
@@ -63,19 +64,23 @@ advType: iden '*'
 
 block: ':' stmt ok
 args: arg expr
+    | arg
 arg: expr ',' arg
-imutstmt: varStmt
+   | ',' arg
+compstmt: varStmt
         | funcCall
         | whileLine
         | ??
-mutstmt: ifStmt
+blocstmt: ifStmt
        | loop
        | ??
-stmt: imutStmt (';'|'\n')
-    | mutStmt
-expr: mut
+stmt: compStmt (';'|'\n')
+    | blocStmt
+expr: iden
+    | mut
     | imut
     | funcCall
+    | indexTab
     | ??
 mut: table
    | ??
@@ -115,4 +120,10 @@ whileLine: while imut
 table: '{' (element|elements) '}'
 elements: repeatElm element
 repeatElm: element ',' repeatElm
+         | ',' repeatElm
 element: expr|varDec|varTyp
+indexTab: ??
+
+-- number
+
+-- string

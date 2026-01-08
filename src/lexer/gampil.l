@@ -1,15 +1,27 @@
 %{
 #include <stdio.h>
+#include <string.h>
 int yylex();
 %}
 
+singleComment "<-".*
+multiComment [<][~][^~]*[~]+([^~><][^~]*[~]+)*[>] 
+
+/*
+Source : https://stackoverflow.com/questions/25395251/detecting-and-skipping-line-comments-with-flex
+*/
+
+assignment ({arithmeticOperator}|{bitwiseOperator})"be"
 arithmeticOperator [+\-*/%^]
-relationalOperator [<>!][= ]|"="
+relationalOperator [<>!][=]?|"="
 bitwiseOperator [&|~]|"||"|">>"|"<<"
 iden [A-Za-z]+[A-Za-z0-9]*
 whole [0-9]+
 
 %%
+{singleComment} {printf("%s\t: comments\n", yytext); }
+{multiComment} {printf("%s\t: comment\n", yytext); }
+{assignment} {printf("%s\t: assign\n", yytext); }
 "be" {printf("%s\t: be\n", yytext); }
 "if" {printf("%s\t: if\n", yytext); }
 "but" {printf("%s\t: but\n", yytext); }
@@ -31,8 +43,8 @@ whole [0-9]+
 {bitwiseOperator} {printf("%s\t: bitwise\n", yytext); } 
 {whole} {printf("%s\t: whole number\n", yytext); } 
 {iden}+ {printf("%s\t: iden\n", yytext); } 
-" " {;};
-.  {printf("error! \"%s\" is unknown\n", yytext); };
+[\n\t ]* {; }
+.  {printf("%s\t: unknown\n", yytext); };
 %%
 
 int main(){
