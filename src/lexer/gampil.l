@@ -4,8 +4,8 @@
 int yylex();
 %}
 
-singleComment "<-".*
-multiComment [<][~][^~]*[~]+([^~><][^~]*[~]+)*[>] 
+singleComment "\\".*
+multiComment [`][^`]*[`] 
 
 /*
 Source : https://stackoverflow.com/questions/25395251/detecting-and-skipping-line-comments-with-flex
@@ -19,8 +19,8 @@ iden [A-Za-z]+[A-Za-z0-9]*
 whole [0-9]+
 
 %%
-{singleComment} {printf("%s\t: comments\n", yytext); }
-{multiComment} {printf("%s\t: comment\n", yytext); }
+{singleComment} {printf("%s\t: comment\n", yytext); }
+{multiComment} {printf("%s\t: comments\n", yytext); }
 {assignment} {printf("%s\t: assign\n", yytext); }
 "be" {printf("%s\t: be\n", yytext); }
 "if" {printf("%s\t: if\n", yytext); }

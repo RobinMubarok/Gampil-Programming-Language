@@ -19,8 +19,8 @@ false
 
 -- Comments
 
-singleComment "<-".*
-multiComment [<][~][^~]*[~]+([^~><][^~]*[~]+)*[>] 
+singleComment "\\".*
+multiComment [`][^`]*[`] 
 Source from https://stackoverflow.com/questions/25395251/detecting-and-skipping-line-comments-with-flex
 
 -- Symbols
@@ -119,6 +119,7 @@ whileLine: while imut
 
 table: '{' (element|elements) '}'
 elements: repeatElm element
+        | repeatElm
 repeatElm: element ',' repeatElm
          | ',' repeatElm
 element: expr|varDec|varTyp
