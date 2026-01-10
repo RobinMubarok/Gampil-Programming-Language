@@ -26,7 +26,41 @@ Variabel dideklarasikan dengan menggunakan kata kunci 'be'.
 Contoh:
 
 ```
-  int x be 5
+  num16 x be 5
+```
+
+Tipe data bawaan di bahasa Gampil ada empat jenis:
+
+- ```bitOff``` dan ```bitOn``` menggantikan ```void``` dan ```boolean```
+- ```asc8```, ```asc16```, dan ```asc32``` menggantikan ```char```, ```unsigned short```, dan ```unsigned int```
+- ```num16```, ```num32```, dan ```num64``` menggantikan ```signed int```, ```long```, dan ```long long```
+- ```rat32```, ```rat64```, dan ```rat128``` menggantikan ```float```, ```double```, dan ```long double```
+
+Namun, Gampil juga mendukung tipe pada Python.
+
+```
+    str varString be str["Ini String!"]
+```
+
+Selain itu, juga mendukung variabel untuk mewakili register seperti pada Assembly.
+
+```
+  eax varReg be 20
+```
+
+### Baris baru
+
+Sama seperti Python, tidak perlu titik dua (';') sebagai pengganti baris. Meski begitu, masih bisa digunakan apabila memang mau sebaris.
+
+```
+  num16 var be 5
+  printf ["%d", var]
+```
+
+Ini juga valid,
+
+```
+  num16 var2 be 7; printf ["%d", var2]
 ```
 
 ### Komentar
@@ -58,9 +92,15 @@ Tiap blok kode baik pada fungsi, percabangan, atau perulangan diawali titik dua 
 Contoh:
 
 ```
-  int add[int a, int b]:
+  num16 add[int a, int b]:
     return a + b
   ok
+```
+
+Untuk memanggil, gunakan kurung siku ```[]```.
+
+```
+  printf ["%d", add[2, 3]]
 ```
 
 ### Percabangan
@@ -101,5 +141,48 @@ Contoh:
 ```
 
 ### Array
+
+Array menggunakan kurawal ```{}``` dan dideklarasikan dengan tanda bintang ```*```.
+
+```
+  num16* varArray be {1, 2, 3}
+```
+
+Untuk memperoleh nilai, dapat menggunakan gunakan kurung biasa ```()```
+
+```
+  printf ["%d", varArray(0)]
+
+```
+
+### Loop
+
+Gampil memperkenalkan 'redo' loop! Loop yang bisa meniru 'while', 'for', dan loop lain sekaligus. Untuk for-loop:
+
+```
+  redo <array> as <iterator>:
+    <instruksi>
+  ok
+```
+
+atau, untuk looping tak berujung.
+
+```
+  redo:
+    <instruksi>
+  ok
+```
+
+Contoh
+
+```
+  num16* arrayNum be {1, 3, 5, 7, 9}
+  redo arrayNum as i:
+    printf ["%d", i]
+  ok
+
+  \ output 13579
+```
+
 
 
