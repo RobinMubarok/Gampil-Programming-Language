@@ -4,10 +4,10 @@
 
 ### Operator
 
-- +, -, *, /, %, ^           : Operator Matematika\n
-- <, >, =, !, <=, >=, !=     : Operator Relasi\n
-- &, |, ||, ~, >>, <<        : Operator Bitwise\n
-- and, or, not               : Operator Boolean\n
+- +, -, *, /, %, ^           : Operator Matematika
+- <, >, =, !, <=, >=, !=     : Operator Relasi
+- &, |, ||, ~, >>, <<        : Operator Bitwise
+- and, or, not               : Operator Boolean
 
 ### Hello World
 
