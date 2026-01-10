@@ -148,11 +148,10 @@ Array menggunakan kurawal ```{}``` dan dideklarasikan dengan tanda bintang ```*`
   num16* varArray be {1, 2, 3}
 ```
 
-Untuk memperoleh nilai, dapat menggunakan gunakan kurung biasa ```()```
+Untuk memperoleh nilai, dapat menggunakan gunakan kurung biasa ```()```.
 
 ```
   printf ["%d", varArray(0)]
-
 ```
 
 ### Loop
@@ -165,7 +164,7 @@ Gampil memperkenalkan 'redo' loop! Loop yang bisa meniru 'while', 'for', dan loo
   ok
 ```
 
-atau, untuk looping tak berujung.
+Untuk looping tak berujung:
 
 ```
   redo:
@@ -173,7 +172,7 @@ atau, untuk looping tak berujung.
   ok
 ```
 
-Contoh
+Contoh:
 
 ```
   num16* arrayNum be {1, 3, 5, 7, 9}
