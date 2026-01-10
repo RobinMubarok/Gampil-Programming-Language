@@ -183,5 +183,8 @@ Contoh:
   \ output 13579
 ```
 
+### Ekstensi
+
+Gampil menggunakan ekstensi ```.ga```. Bisa dilihat di file ```example.ga```.
 
 
