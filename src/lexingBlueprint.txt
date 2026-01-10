@@ -30,7 +30,7 @@ arithmeticOperator [+\-*/%^]
 relationalOperator [<>][=]?|"!="|"="
 bitwiseOperator [&|]|"||"|">>"|"<<"
 unaryOperator [~!]
-iden [A-Za-z]+[A-Za-z0-9]*
+iden [_A-Za-z]+[_A-Za-z0-9]*
 whole [0-9]+
 
 -- Variable Declaration
@@ -59,8 +59,9 @@ varTyp: iden iden
       | advType iden
 advType: arrType
        | expr
-       | ??
+       | regType
 arrType: iden '*'
+regType: <depended by architecture>
 
 
 -- Generals
@@ -78,22 +79,19 @@ compstmt: varStmt
 blocstmt: ifStmt
        | loop
        | ??
-stmt: compStmt (';'|'\n')
-    | blocStmt
+stmt: compStmt (';'|'\n') stmt
+    | blocStmt stmt
 expr: iden
-    | mut
-    | imut
+    | table
+    | atom
     | funcCall
     | indexTab
     | atrribTab
     | operations
     | ??
-mut: table
-   | string
-   | ??
-imut: numN
-    | ratN
-    | bitS
+atom: num
+    | asc
+    | bit
     | ??
 
 
@@ -139,14 +137,85 @@ indexTab: iden '(' expr ')'
 atrribTab: iden '.' expr
 
 -- number
-ratN: ??
-numN: ??
+num: intNum | floatNum | complexNum
+complexNum:
+          | signedFloat '+' imagNum 
+          | signedFloat '-' imagNum  
+signed_number:
+             | intPart
+             | '-' intPart 
+signedFloat:
+           | floatPart
+           | '-' floatPart
+imagNum:
+       | imagPart
+numPart: intPart | floatPart | imagPart
+imagPart: (floatPart | digitPart) ('j' | 'J')
+floatPart:
+         | digitPart '.' {digitPart}? {exponent}?
+         | '.' digitPart {exponent}?
+         | digitPart exponent
+digitPart: whole ([_]? whole)*
+exponent:  ('e' | 'E') ['+' | '-'] digitPart
+intPart: decimal | binary | octal | hexDec | zeroInt
+decimal: natural ([_]? whole)*
+binary: '0' ('b'| 'B') ([_]? binDigit)+
+octal: '0' ('o' | 'O') ([_]? octDigit)+
+hexDec: '0' ('x' | 'X') ([_]? hexDigit)+
+zeroint: '0'+ ([_]? '0')*
+natural: [1-9]
+binDigit: '0' | '1'
+octDigit: [0-7]
+hexDigit: whole | [a-f] | [A-F]
 
 -- string
-string: ??
+asc: {stringPrefix}? (stringContent)
+stringPrefix: ([rub]|[RUB])|[Bb][Rr]|[Rr][Bb]
+stringContent:
+             | '\'\'\'' ( ^'\'\'\'' longStringItem)* '\'\'\''
+             | '\"\"\"' ( !'\"\"\"' longStringItem)* '\"\"\"'
+             | '\'' ( !'\'' stringItem)* '\''
+             | '\"' ( !'\"' stringItem)* '\"'
+stringItem: stringChar | stringEscapeseq
+stringChar: ^{backslash}|^{newline}
+longStringItem:  stringItem | newline
+stringEscapeseq: '\' sourceCharacters
+??
 
 -- operation
-operations: ??
+operations: logicOr|logicAnd|inclusOr|exclusOr|andOp|eqOp|relatOp|shiftOp|addOp|multiOp|unaryOp|primaryOp
+logicOr: logicAnd
+       | logicalOr or logicAnd
+logicAnd: inclusOr
+        | logicAnd and inclusOr
+inclusOr: exclusOr
+        | inclusOr '|' exclusOr
+exclusOr: andOp
+        | exclusOr '||' andOp
+andOp: eqOp
+     | andOp '&' eqOp
+eqOp: relatOp
+    | eqOp '=' relatOp
+    | eqOp '!=' relatOp
+relatOp: shiftOp
+       | relatOp '<' shiftOp
+       | relatOp '>' shiftOp
+       | relatOp '<=' shiftOp
+       | relatOp '>=' shiftOp
+shiftOp: addOp
+       | shiftOp '<<' addOp
+       | shiftOp '>>' addOp
+addOp: multiOp
+     | addOp '+' multiOp
+     | addOp '-' multiOp
+multiOp: multiOp '*' unaryOp
+                         | multiOp '/' unaryOp
+                         | multiOp '%' unaryOp
+unaryOp: not expr
+primaryOp ::= iden
+                       | asc
+                       | '(' expr ')'
+??
 
 -- boolean
-bitS: true|false
+bit: true|false

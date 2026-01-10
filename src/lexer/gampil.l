@@ -16,7 +16,7 @@ arithmeticOperator [+\-*/%^]
 relationalOperator [<>][=]?|"!="|"="
 bitwiseOperator [&|]|"||"|">>"|"<<"
 unaryOperator [~!]
-iden [A-Za-z]+[A-Za-z0-9]*
+iden [_A-Za-z]+[_A-Za-z0-9]*
 whole [0-9]+
 
 %%
