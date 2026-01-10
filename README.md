@@ -185,6 +185,6 @@ Contoh:
 
 ### Ekstensi
 
-Gampil menggunakan ekstensi ```.ga```. Bisa dilihat di file ```example.ga```.
+Gampil menggunakan ekstensi ```.ga```. Bisa dilihat di file ```src/example.ga```.
 
 
