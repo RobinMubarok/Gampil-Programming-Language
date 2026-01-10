@@ -19,7 +19,7 @@ false
 
 -- Comments
 
-singleComment "\\".*
+singleComment [\\].*
 multiComment [`][^`]*[`] 
 Source from https://stackoverflow.com/questions/25395251/detecting-and-skipping-line-comments-with-flex
 
@@ -75,10 +75,8 @@ compstmt: varStmt
         | funcCall
         | whileLine
         | ret
-        | ??
 blocstmt: ifStmt
        | loop
-       | ??
 stmt: compStmt (';'|'\n') stmt
     | blocStmt stmt
 expr: iden
@@ -88,12 +86,10 @@ expr: iden
     | indexTab
     | atrribTab
     | operations
-    | ??
 atom: num
     | asc
     | bit
-    | ??
-
+    | nil
 
 -- Function Declaration
 
@@ -110,8 +106,11 @@ funcCall: expr '[' (expr|args) ']'
 -- If-Else Statement
 
 ifStmt: if {cases}+ ok
-cases: imut caseBlock
+ifTern: if {ternCase}+ ok
+cases: atom caseBlock
+ternCase: atom expr
 caseBlock: ':' stmt but
+
 
 -- Looping
 
@@ -123,7 +122,7 @@ each: iden as (varTyp|varTyps)
     | table as (varTyp|varTyps)
 quiteEach: iden quite as (varTyp|varTyps)
          | table quite as (varTyp|varTyps)
-whileLine: while imut
+whileLine: while atom
 
 -- arrays
 
@@ -169,21 +168,53 @@ octDigit: [0-7]
 hexDigit: whole | [a-f] | [A-F]
 
 -- string
-asc: {stringPrefix}? (stringContent)
-stringPrefix: ([rub]|[RUB])|[Bb][Rr]|[Rr][Bb]
+asc: string | ftString
+string: {stringPrefix}? (stringContent)
+stringPrefix: ([rub]|[RUB])|([Bb][Rr])|([Rr][Bb])
 stringContent:
-             | '\'\'\'' ( ^'\'\'\'' longStringItem)* '\'\'\''
-             | '\"\"\"' ( !'\"\"\"' longStringItem)* '\"\"\"'
-             | '\'' ( !'\'' stringItem)* '\''
-             | '\"' ( !'\"' stringItem)* '\"'
+             | "\'\'\'" ( ^"\'\'\'" longStringItem)* "\'\'\'"
+             | "\"\"\"" ( ^"\"\"\"" longStringItem)* "\"\"\""
+             | [\'] ( ^[\'] stringItem)* [\']
+             | [\"] ( ^[\"] stringItem)* [\"]
 stringItem: stringChar | stringEscapeseq
 stringChar: ^{backslash}|^{newline}
 longStringItem:  stringItem | newline
 stringEscapeseq: '\' sourceCharacters
-??
+sourceCharacters: [\\\'\"abfnrtv]|"ooo"|"xhh"|"N" iden|"uxxxx"|"Uxxxxxxxx"
+ftString: ftStart {ftMiddle}* ftEnd
+        | ftTripString
+ftTripString: ftTripStart {ftMiddlePlus}* ftTripEnd
+ftStart: fstringprefix [\'\"]
+ftTripStart: fstringprefix ("\'\'\'" | "\"\"\"")
+ftEnd: [\'\"]
+ftTripEnd: "\'\'\'" | "\"\"\""
+fstringprefix: [Ff]|[Tt]|([Ff]|[Tt])[Rr]|[Rr]([Ff]|[Tt])
+ftDebugSpecifier: be
+ftMiddlePlus:
+            | ftMiddle
+            | [\n]
+ftMiddle:
+        | ftReplace
+        | ftMid
+ftMid:
+     | ([^\\] [^\n] [^{] [^}] ^ftQuote) sourceCharacters
+     | stringEscapeseq
+     | "{{"
+     | "}}"
+ftReplace: 
+         | '{' expr {ftDebugSpecifier}? {ftStringConversion}? {ftStringFullFormat}? '}'
+         | table
+ftStringConversion:
+                  | [!] [sra]
+ftStringFullFormat:
+                  | ':' {ftStringFormat}*
+ftStringFormat:
+              | ftMiddle
+              | ftReplace
+
 
 -- operation
-operations: logicOr|logicAnd|inclusOr|exclusOr|andOp|eqOp|relatOp|shiftOp|addOp|multiOp|unaryOp|primaryOp
+operations: logicOr|logicAnd|inclusOr|exclusOr|andOp|eqOp|relatOp|shiftOp|addOp|multiOp|unaryOp|primaryOp|ifTern
 logicOr: logicAnd
        | logicalOr or logicAnd
 logicAnd: inclusOr
@@ -191,31 +222,30 @@ logicAnd: inclusOr
 inclusOr: exclusOr
         | inclusOr '|' exclusOr
 exclusOr: andOp
-        | exclusOr '||' andOp
+        | exclusOr "||" andOp
 andOp: eqOp
      | andOp '&' eqOp
 eqOp: relatOp
     | eqOp '=' relatOp
-    | eqOp '!=' relatOp
+    | eqOp "!=" relatOp
 relatOp: shiftOp
        | relatOp '<' shiftOp
        | relatOp '>' shiftOp
-       | relatOp '<=' shiftOp
-       | relatOp '>=' shiftOp
+       | relatOp "<=" shiftOp
+       | relatOp ">=" shiftOp
 shiftOp: addOp
-       | shiftOp '<<' addOp
-       | shiftOp '>>' addOp
+       | shiftOp "<<" addOp
+       | shiftOp ">>" addOp
 addOp: multiOp
      | addOp '+' multiOp
      | addOp '-' multiOp
-multiOp: multiOp '*' unaryOp
-                         | multiOp '/' unaryOp
-                         | multiOp '%' unaryOp
+multiOp: multiOp '*' (unaryOp|primaryOp)
+       | multiOp '/' (unaryOp|primaryOp)
+       | multiOp '%' (unaryOp|primaryOp)
 unaryOp: not expr
-primaryOp ::= iden
-                       | asc
-                       | '(' expr ')'
-??
+primaryOp: iden
+         | asc
+         | '(' expr ')'
 
 -- boolean
 bit: true|false

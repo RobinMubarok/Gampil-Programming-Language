@@ -4,8 +4,8 @@
 int yylex();
 %}
 
-singleComment "\\".*
-multiComment [`][^`]*[`] 
+singleComment [\\].*
+multiComment [`][^`]*[`]  
 
 /*
 Source : https://stackoverflow.com/questions/25395251/detecting-and-skipping-line-comments-with-flex
