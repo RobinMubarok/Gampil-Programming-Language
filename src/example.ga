@@ -85,7 +85,7 @@ bitOff greet[]:
    There are bits (bitOff/bitOn), encodings (enc), numbers (num) and rational numbers (rat).
 
    bit<On or Off>	: length 0 (bitOff) or 1 (bitOn) bit, 0 for void type
-   enc<size>		: length <size> bit
+   asc<size>		: length <size> bit
       size can be 8 to 32 exponentially, unsigned (enc8, enc16, enc32)
    num<size>		: length <size> bit
       size can be 16 to 64 exponentially, but signed (num16, num32, num64)
