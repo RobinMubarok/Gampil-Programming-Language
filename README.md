@@ -45,7 +45,7 @@ Namun, Gampil juga mendukung tipe pada Python.
 Selain itu, juga mendukung variabel untuk mewakili register seperti pada Assembly.
 
 ```
-  eax varReg be 20
+    eax varReg be 20
 ```
 
 ### Baris baru
@@ -60,7 +60,7 @@ Sama seperti Python, tidak perlu titik dua (';') sebagai pengganti baris. Meski 
 Ini juga valid,
 
 ```
-  num16 var2 be 7; printf ["%d", var2]
+    num16 var2 be 7; printf ["%d", var2]
 ```
 
 ### Komentar
