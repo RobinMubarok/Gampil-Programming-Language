@@ -4,10 +4,10 @@
 
 ### Operator
 
-- ```+```, ```-```, ```*```, ```/```, ```%```, ```^``` Operator Matematika
-- ```<```, ```>```, ```=```, ```!```, ```<=```, ```>=```, ```!=``` Operator Relasi
-- ```&```, ```|```, ```||```, ```~```, ```>>```, ```<<``` Operator Bitwise
-- ```and```, ```or```, ```not``` Operator Boolean
+- ```+```, ```-```, ```*```, ```/```, ```%```, ```^``` Operator Matematika;
+- ```<```, ```>```, ```=```, ```!```, ```<=```, ```>=```, ```!=``` Operator Relasi;
+- ```&```, ```|```, ```||```, ```~```, ```>>```, ```<<``` Operator Bitwise;
+- ```and```, ```or```, ```not``` Operator Boolean.
 
 ### Hello World
 
@@ -31,10 +31,10 @@ Contoh:
 
 Tipe data bawaan di bahasa Gampil ada empat jenis:
 
-- ```bitOff``` dan ```bitOn``` menggantikan ```void``` dan ```boolean```
-- ```asc8```, ```asc16```, dan ```asc32``` menggantikan ```char```, ```unsigned short```, dan ```unsigned int```
-- ```num16```, ```num32```, dan ```num64``` menggantikan ```signed int```, ```long```, dan ```long long```
-- ```rat32```, ```rat64```, dan ```rat128``` menggantikan ```float```, ```double```, dan ```long double```
+- Bit, ada ```bitOff``` dan ```bitOn``` menggantikan ```void``` dan ```boolean```;
+- ASCII (karakter), ada ```asc8```, ```asc16```, dan ```asc32``` menggantikan ```char```, ```unsigned short```, dan ```unsigned int```;
+- Number (angka), ada ```num16```, ```num32```, dan ```num64``` menggantikan ```signed int```, ```long```, dan ```long long```;
+- Rational (desimal), ada ```rat32```, ```rat64```, dan ```rat128``` menggantikan ```float```, ```double```, dan ```long double```.
 
 Namun, Gampil juga mendukung tipe pada Python.
 
