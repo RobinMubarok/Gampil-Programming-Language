@@ -27,8 +27,9 @@ Source from https://stackoverflow.com/questions/25395251/detecting-and-skipping-
 
 assignment ({arithmeticOperator}|{bitwiseOperator})"be"
 arithmeticOperator [+\-*/%^]
-relationalOperator [<>!][=]?|"="
-bitwiseOperator [&|~]|"||"|">>"|"<<"
+relationalOperator [<>][=]?|"!="|"="
+bitwiseOperator [&|]|"||"|">>"|"<<"
+unaryOperator [~!]
 iden [A-Za-z]+[A-Za-z0-9]*
 whole [0-9]+
 
@@ -56,8 +57,10 @@ varDecl: varDec ',' varDecl
 varDec: varTyp be expr
 varTyp: iden iden
       | advType iden
-advType: iden '*'
+advType: arrType
+       | expr
        | ??
+arrType: iden '*'
 
 
 -- Generals
@@ -70,6 +73,7 @@ arg: expr ',' arg
 compstmt: varStmt
         | funcCall
         | whileLine
+        | ret
         | ??
 blocstmt: ifStmt
        | loop
@@ -81,16 +85,24 @@ expr: iden
     | imut
     | funcCall
     | indexTab
+    | atrribTab
+    | operations
     | ??
 mut: table
+   | string
    | ??
-imut: ??
+imut: numN
+    | ratN
+    | bitS
+    | ??
+
 
 -- Function Declaration
 
 funcDec: iden decFunc block
        | advType decFunc block
 decFunc: iden '[' (varDec|varTyp|varDecs) ']'
+ret: return expr
 
 -- Funtion Call
 
@@ -123,8 +135,18 @@ elements: repeatElm element
 repeatElm: element ',' repeatElm
          | ',' repeatElm
 element: expr|varDec|varTyp
-indexTab: ??
+indexTab: iden '(' expr ')'
+atrribTab: iden '.' expr
 
 -- number
+ratN: ??
+numN: ??
 
 -- string
+string: ??
+
+-- operation
+operations: ??
+
+-- boolean
+bitS: true|false

@@ -11,6 +11,7 @@ NoneType main[list(str) args]:
     st(0) num2 be 8.76			\ stored at FPU register stack 0
 
     enc8* letter be {"a", "b"}		\ table type
+    printf ["element: %d", letter(0)]	\ table indexing
 
     printf ["added: %d", add [y, x]]	\ calling declared function
     printf ["added: %d", add [y, ]]	\ pre-initialized variable can be skipped

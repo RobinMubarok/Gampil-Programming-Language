@@ -13,8 +13,9 @@ Source : https://stackoverflow.com/questions/25395251/detecting-and-skipping-lin
 
 assignment ({arithmeticOperator}|{bitwiseOperator})"be"
 arithmeticOperator [+\-*/%^]
-relationalOperator [<>!][=]?|"="
-bitwiseOperator [&|~]|"||"|">>"|"<<"
+relationalOperator [<>][=]?|"!="|"="
+bitwiseOperator [&|]|"||"|">>"|"<<"
+unaryOperator [~!]
 iden [A-Za-z]+[A-Za-z0-9]*
 whole [0-9]+
 
@@ -29,7 +30,7 @@ whole [0-9]+
 "ok" {printf("%s\t: ok\n", yytext); }
 "and" {printf("%s\t: and\n", yytext); }
 "or" {printf("%s\t: or\n", yytext); }
-"not" {printf("%s\t: not\n", yytext); }
+"not"|{unaryOperator} {printf("%s\t: not\n", yytext); }
 "redo" {printf("%s\t: redo\n", yytext); }
 "quite" {printf("%s\t: quite\n", yytext); }
 "as" {printf("%s\t: as\n", yytext); }
