@@ -79,7 +79,7 @@ Komentar multi-baris.
 `
 ```
 
-### Fungsi dsn Blok Kode
+### Fungsi dan Blok Kode
 
 Tiap blok kode baik pada fungsi, percabangan, atau perulangan diawali titik dua (':') dan diakhiri dengan kata kunci 'ok'.
 
