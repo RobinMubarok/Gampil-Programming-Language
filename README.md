@@ -1,6 +1,6 @@
 # Gampil Programming Language
 
-  Bahasa pemrograman Gampil adalah bahasa yang berfokus sebagai media penyajian algoritma, bersifat komplementer dengan FlowChart. Gampil berasal dari bahasa Jawa, yang berarti 'sangat mudah'. Tidak seperti bahasa lain yang pragmatis dan berfokus pada implementasi framework atau library, bahasa ini diharapkan mampu menyajikan alur komputasi dengan efektif dan sintaks yang familiar dengan bahasa manusia. Desain dari bahasa ini sendiri terinspirasi kuat dari Python dan Assembly. Rencananya, bahasa ini juga akan mendukung penggunaan library Python dan penggunaan instruksi Assembly. Tujuannya, adalah memperluas ranah penyajian dari high-level sampai low-level.
+  Bahasa pemrograman Gampil adalah bahasa yang berfokus sebagai media penyajian algoritma, bersifat komplementer dengan FlowChart. Gampil berasal dari bahasa Jawa, yang berarti 'sangat mudah'. Tidak seperti bahasa lain yang pragmatis dengan penekanan pada implementasi framework atau library, bahasa ini diharapkan mampu menyajikan alur komputasi dengan efektif dan sintaks yang familiar dengan bahasa manusia. Desain dari bahasa ini sendiri terinspirasi kuat dari Python dan Assembly. Rencananya, bahasa ini juga akan mendukung penggunaan library Python dan penggunaan instruksi Assembly. Tujuannya, adalah memperluas ranah penyajian dari high-level sampai low-level.
 
 ### Operator
 
