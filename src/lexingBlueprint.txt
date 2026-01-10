@@ -239,9 +239,10 @@ shiftOp: addOp
 addOp: multiOp
      | addOp '+' multiOp
      | addOp '-' multiOp
-multiOp: multiOp '*' (unaryOp|primaryOp)
-       | multiOp '/' (unaryOp|primaryOp)
-       | multiOp '%' (unaryOp|primaryOp)
+multiOp: multiOp '*' expOp
+       | multiOp '/' expOp
+       | multiOp '%' expOp
+expOp: expOp '^' (unaryOp|primaryOp)
 unaryOp: not expr
 primaryOp: iden
          | asc
