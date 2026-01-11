@@ -11,7 +11,9 @@ NoneType main[list(str) args]:
     st(0) num2 be 8.76			\ stored at FPU register stack 0
 
     asc8* letter be {"a", "b"}		\ table type
+    int* ptr be adr[x]			\ pointer type
     printf ["element: %d", letter(0)]	\ table indexing
+    printf ["value: %d", ptr(0)]	\ either pointer type considered an array too!
 
     printf ["added: %d", add [y, x]]	\ calling declared function
     printf ["added: %d", add [y, ]]	\ pre-initialized variable can be skipped
