@@ -107,8 +107,8 @@ funcCall: expr '[' (expr|args|varAssign) ']'
 
 ifStmt: if {cases}+ ok
 ifTern: if {ternCase}+ ok
-cases: atom caseBlock
-ternCase: atom expr
+cases: expr caseBlock
+ternCase: expr ':' expr but
 caseBlock: ':' stmt but
 
 
