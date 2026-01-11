@@ -103,6 +103,9 @@ ret: return expr
 
 funcCall: expr '[' (expr|args|varAssign) ']'
         | iden '[' (expr|args|varAssign) ']'
+        | asmins '[' opcodes ']'
+asmins: <depended by architecture>
+opcodes: <depended by architecture>
 
 -- If-Else Statement
 
