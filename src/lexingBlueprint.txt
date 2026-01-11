@@ -100,8 +100,8 @@ ret: return expr
 
 -- Funtion Call
 
-funcCall: expr '[' (expr|args) ']'
-        | iden '[' (expr|args) ']'
+funcCall: expr '[' (expr|args|varAssign) ']'
+        | iden '[' (expr|args|varAssign) ']'
 
 -- If-Else Statement
 
