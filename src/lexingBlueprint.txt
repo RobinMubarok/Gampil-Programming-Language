@@ -98,10 +98,10 @@ funcDec: iden decFunc block
        | advType decFunc block
 decFunc: iden '[' (varDec|varTyp|'?'|parFormal) ']'
        | iden '[' ']'
-parFormal: par (varDec|varTyp|'?')
-parF: varDec ',' par
-    | varTyp ',' par
-    | '?' ',' par
+parFormal: parF (varDec|varTyp|'?')
+parF: varDec ',' parF
+    | varTyp ',' parF
+    | '?' ',' parF
 ret: return expr
 
 -- Funtion Call
