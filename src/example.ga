@@ -10,17 +10,20 @@ NoneType main[list(str) args]:
     rax y; y be 7			\ stored at register rax
     st(0) num2 be 8.76			\ stored at FPU register stack 0
 
-    tabl letter be {"a", "b"}		\ table type
+    table letter be {"a", "b"}		\ table type
     \ normal tables are static, do not need strict element.. so it can declare even hashtables!
-    \ types inside normal tables are being inferenced and stored in stack 
-    tabl Hashy be {tabl(asc8) id be "001", tabl(asc8) name be "John", num16 age be 0}
-    tabl counts be {nil}*10		\ all elements set to nil
-    \ dynamic table uses 'tab' or 'for' function to create.. the 'for' one converts normal tables and adds metadata.. later in loops
-    tabl let2 be tab[, {"c", "d"}]	\ dynamic table type
-    tabl(num16) ptr be num16.adr[x]	\ pointer type + casting
+    \ element types inside normal tables are being optionally inferenced and stored in stack 
+    table Hashy be {table(asc8) id be "001", table(asc8) name be "John", num16 age be 0}
+    table counts be {nil}*10		\ all elements set to nil
+    \ dynamic table uses 'row' or 'for' function to create tables in heap.. 'row' only returns an address
+    \ the 'for' one converts any array types: tables, pylist, ect. into dynamic table with metadata! later in loops
+    table let2 be row[, {"c", "d"}]	\ dynamic table type
+    table let3 be for[letter]
+    table(num16) ptr be num16.adr[x]	\ pointer type + casting
 
     let2 be tab[src be let2, {"e"}]	\ realloc to add 'e' with default arg 'src'
     printf ["element: %d", letter(0)]	\ table indexing
+    printf ["keyval: %d", Hashy.age]	\ hash table key value
     printf ["value: %d", ptr(0)]	\ either pointer type considered an array too!
 
     printf ["added: %d", add[y,b be x]]	\ calling declared function
