@@ -10,10 +10,14 @@ NoneType main[list(str) args]:
     rax y; y be 7			\ stored at register rax
     st(0) num2 be 8.76			\ stored at FPU register stack 0
 
-    asc8* letter be {"a", "b"}		\ table type
-    num16* counts be {nil}*10		\ all elements set to nil
-    asc8* let2 be tab[, {"c", "d"}]	\ dynamic table type
-    num16* ptr be num16.adr[x]	\ pointer type + casting
+    tabl letter be {"a", "b"}		\ table type
+    \ normal tables are static, do not need strict element.. so it can declare even hashtables!
+    \ types inside normal tables are being inferenced and stored in stack 
+    tabl Hashy be {tabl(asc8) id be "001", tabl(asc8) name be "John", num16 age be 0}
+    tabl counts be {nil}*10		\ all elements set to nil
+    \ dynamic table uses 'tab' or 'for' function to create.. the 'for' one converts normal tables and adds metadata.. later in loops
+    tabl let2 be tab[, {"c", "d"}]	\ dynamic table type
+    tabl(num16) ptr be num16.adr[x]	\ pointer type + casting
 
     let2 be tab[src be let2, {"e"}]	\ realloc to add 'e' with default arg 'src'
     printf ["element: %d", letter(0)]	\ table indexing
@@ -97,7 +101,7 @@ bitOff greet[]:
       size can be 16 to 64 exponentially, but signed (num16, num32, num64)
    rat<size>		: length <size> bit
       size can be 32 to 128 exponentially (rat32, rat64, rat128)
-   <type>*		: array type (sizes are inferenced)
+   tabl(<type>)		: array type (sizes and types are inferenced)
 
 `
 

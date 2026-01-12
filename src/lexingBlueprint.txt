@@ -57,10 +57,8 @@ varDecl: varDec ',' varDecl
 varDec: varTyp be expr
 varTyp: iden iden
       | advType iden
-advType: arrType
-       | expr
+advType: expr
        | regType
-arrType: iden '*'
 regType: <depended by architecture>
 
 
