@@ -13,7 +13,7 @@ NoneType main[list(str) args]:
     asc8* letter be {"a", "b"}		\ table type
     num16* counts be {nil}*10		\ all elements set to nil
     asc8* let2 be tab[, "c", "d"]	\ dynamic table type
-    num16* ptr be adr[num16[x]]		\ pointer type + casting
+    num16* ptr be num16.adr[x]		\ pointer type + casting
 
     let2 be tab[src be let2, "e"]	\ realloc to add 'e' with default arg 'src'
     printf ["element: %d", letter(0)]	\ table indexing
