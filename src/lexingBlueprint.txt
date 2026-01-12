@@ -134,10 +134,8 @@ loop: loopInfo block
 loopInfo: redo
         | redo each
         | redo quiteEach
-each: iden as (varTyp|varTyps)
-    | table as (varTyp|varTyps)
-quiteEach: iden quite as (varTyp|varTyps)
-         | table quite as (varTyp|varTyps)
+each: expr as (varTyp|varTyps)
+quiteEach: expr quite as (varTyp|varTyps)
 whileLine: while atom
 
 -- arrays
