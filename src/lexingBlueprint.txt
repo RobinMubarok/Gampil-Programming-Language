@@ -96,7 +96,7 @@ atom: num
 
 funcDec: iden decFunc block
        | advType decFunc block
-decFunc: iden '[' (varDec|varTyp|varDecs) ']'
+decFunc: iden '[' (varDec|varTyp|varDecs|'?') ']'
 ret: return expr
 
 -- Funtion Call
