@@ -11,17 +11,18 @@ NoneType main[list(str) args]:
     st(0) num2 be 8.76			\ stored at FPU register stack 0
 
     table letter be {"a", "b"}		\ table type
-    \ normal tables are static, do not need strict element.. so it can declare even hashtables!
+    \ normal tables are static, do not need strict element.. so it can declare even static hashtables!
     \ element types inside normal tables are being optionally inferenced and stored in stack 
-    table Hashy be {table(asc8) id be "001", table(asc8) name be "John", num16 age be 0}
-    table counts be {nil}*10		\ all elements set to nil
-    \ dynamic table uses 'row' or 'for' function to create tables in heap.. 'row' only returns an address
-    \ the 'for' one converts any array types: tables, pylist, ect. into dynamic table with metadata! later in loops
-    table let2 be row[, {"c", "d"}]	\ dynamic table type
-    table let3 be for[letter]
+    table Hashy be {table(asc8) id be "001", table(asc8) name be "John", num16 age be 0, 7, 9}
+    table counts be {nil} * 10		\ all elements set to nil
+
+    \ dynamic table uses 'row' or 'col' function to create tables in heap.. 'col' only returns an address
+    \ the 'row' one converts any array types: tables, pylist, ect. into dynamic table with metadata! later in loops
+    table let2 be col[, {"c", "d"}]	\ dynamic table type
+    table let3 be row[letter]
     table(num16) ptr be num16.adr[x]	\ pointer type + casting
 
-    let2 be tab[src be let2, {"e"}]	\ realloc to add 'e' with default arg 'src'
+    let2 be col[src be let2, {"e"}]	\ realloc to add 'e' with default arg 'src'
     printf ["element: %d", letter(0)]	\ table indexing
     printf ["keyval: %d", Hashy.age]	\ hash table key value
     printf ["value: %d", ptr(0)]	\ either pointer type considered an array too!
@@ -56,9 +57,9 @@ NoneType main[list(str) args]:
         printn ["Looping"]		\ looping exact 3 times (only static tables or runtime tables are valid)
       ok
 
-    redo for[num] quite as int j:
+    redo row[num] quite as int j:
         printn ["Looping"]		\ looping 3 times
-        stop				\ but it can stops ('for' function converts 'num' from list into runtime table)
+        stop				\ but it can stops ('row' function converts 'num' from list into runtime table)
       ok
 
     redo:
