@@ -18,7 +18,7 @@ NoneType main[list(str) args]:
 
     \ dynamic table uses 'row' or 'col' function to create tables in heap.. 'col' only returns an address
     \ the 'row' one converts any array types: tables, pylist, ect. into dynamic table with metadata! later in loops
-    table let2 be col[, {"c", "d"}]	\ dynamic table type
+    table let2 be col[, {"c", "d"}]	\ dynamic table types
     table let3 be row[letter]
     table(num16) ptr be num16.adr[x]	\ pointer type + casting
 
@@ -105,7 +105,7 @@ bitOff greet[]:
       size can be 16 to 64 exponentially, but signed (num16, num32, num64)
    rat<size>		: length <size> bit
       size can be 32 to 128 exponentially (rat32, rat64, rat128)
-   tabl(<type>)		: array type (sizes and types are inferenced)
+   table(<type>)	: array type (sizes and types are inferenced)
 
 `
 
