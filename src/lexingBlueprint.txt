@@ -96,14 +96,26 @@ atom: num
 
 funcDec: iden decFunc block
        | advType decFunc block
-decFunc: iden '[' (varDec|varTyp|varDecs|'?') ']'
+decFunc: iden '[' (varDec|varTyp|'?'|parFormal) ']'
+       | iden '[' ']'
+parFormal: par (varDec|varTyp|'?')
+parF: varDec ',' par
+    | varTyp ',' par
+    | '?' ',' par
 ret: return expr
 
 -- Funtion Call
 
-funcCall: expr '[' (expr|args|varAssign) ']'
-        | iden '[' (expr|args|varAssign) ']'
+funcCall: expr '[' (expr|parActual|varAssign) ']'
+        | iden '[' (expr|parActual|varAssign) ']'
+        | (iden|expr) '[' ']'
         | asmins '[' opcodes ']'
+parActual: parA expr
+         | parA varAssign
+         | parA
+parA: expr ',' parA
+    | varAssign ',' parA
+    | ',' parA
 asmins: <depended by architecture>
 opcodes: <depended by architecture>
 
@@ -131,6 +143,7 @@ whileLine: while atom
 -- arrays
 
 table: '{' (element|elements) '}'
+     | '{' '}'
 elements: repeatElm element
         | repeatElm
 repeatElm: element ',' repeatElm
