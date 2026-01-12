@@ -12,10 +12,10 @@ NoneType main[list(str) args]:
 
     asc8* letter be {"a", "b"}		\ table type
     num16* counts be {nil}*10		\ all elements set to nil
-    asc8* let2 be tab[, "c", "d"]	\ dynamic table type
+    asc8* let2 be tab[, {"c", "d"}]	\ dynamic table type
     num16* ptr be num16.adr[x]	\ pointer type + casting
 
-    let2 be tab[src be let2, "e"]	\ realloc to add 'e' with default arg 'src'
+    let2 be tab[src be let2, {"e"}]	\ realloc to add 'e' with default arg 'src'
     printf ["element: %d", letter(0)]	\ table indexing
     printf ["value: %d", ptr(0)]	\ either pointer type considered an array too!
 
@@ -45,13 +45,13 @@ NoneType main[list(str) args]:
 
      ` need loops! we invented 'redo' loop! `
 
-    redo num as int i:
-        printn ["Looping"]		\ looping exact 3 times
+    redo letter as int i:
+        printn ["Looping"]		\ looping exact 3 times (only static tables or runtime tables are valid)
       ok
 
-    redo num quite as int j:
+    redo for[num] quite as int j:
         printn ["Looping"]		\ looping 3 times
-        stop				\ but it can stops
+        stop				\ but it can stops ('for' function converts 'num' from list into runtime table)
       ok
 
     redo:
@@ -63,10 +63,10 @@ NoneType main[list(str) args]:
 
     ` 
        the block 'redo: if not x >= 0: stop; but ok ...' can be replaced by
-       'redo: while x >= 0; ...' for more conveinence
+       'redo: while x >= 0; ...' for more conveinence.
     `
 
-    redo: while x < 5
+    redo: while x < 5			\ preprocessor will convert it into 'redo: if not x < 5: stop;...'
         x be x + 1
       ok
 
