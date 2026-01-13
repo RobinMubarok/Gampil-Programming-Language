@@ -50,6 +50,7 @@ varAssign: iden (be|assignment) expr
 -- versatile
 varTyps: varTys varTyp
 varTys: varTyp ',' varTys
+      : iden ',' varTys
 varDecs: varDecl varDec
        | varDecl varTyp
 varDecl: varDec ',' varDecl
