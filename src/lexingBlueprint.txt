@@ -106,10 +106,10 @@ ret: return expr
 -- Funtion Call
 
 procCall: funcCall
+        | asmins '[' opcodes ']'
 funcCall: expr '[' (expr|parActual|varAssign) ']'
         | iden '[' (expr|parActual|varAssign) ']'
         | (iden|expr) '[' ']'
-        | asmins '[' opcodes ']'
 parActual: parA expr
          | parA varAssign
          | parA
