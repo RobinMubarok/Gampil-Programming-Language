@@ -71,7 +71,7 @@ args: arg expr
 arg: expr ',' arg
    | ',' arg
 compstmt: varStmt
-        | funcCall
+        | procCall
         | whileLine
         | ret
 blocstmt: ifStmt
@@ -105,6 +105,7 @@ ret: return expr
 
 -- Funtion Call
 
+procCall: funcCall
 funcCall: expr '[' (expr|parActual|varAssign) ']'
         | iden '[' (expr|parActual|varAssign) ']'
         | (iden|expr) '[' ']'
