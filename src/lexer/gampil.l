@@ -1,7 +1,7 @@
 %{
 #include <stdio.h>
-#include <string.h>
-int yylex();
+#include "../parser/y.tab.h"
+
 %}
 
 singleComment [\\].*
@@ -20,36 +20,35 @@ iden [_A-Za-z]+[_A-Za-z0-9]*
 whole [0-9]+
 
 %%
-{singleComment} {printf("%s\t: comment\n", yytext); }
-{multiComment} {printf("%s\t: comments\n", yytext); }
-{assignment} {printf("%s\t: assign\n", yytext); }
-"be" {printf("%s\t: be\n", yytext); }
-"if" {printf("%s\t: if\n", yytext); }
-"but" {printf("%s\t: but\n", yytext); }
-"else" {printf("%s\t: else\n", yytext); }
-"ok" {printf("%s\t: ok\n", yytext); }
-"and" {printf("%s\t: and\n", yytext); }
-"or" {printf("%s\t: or\n", yytext); }
-"not"|{unaryOperator} {printf("%s\t: not\n", yytext); }
-"redo" {printf("%s\t: redo\n", yytext); }
-"quite" {printf("%s\t: quite\n", yytext); }
-"as" {printf("%s\t: as\n", yytext); }
-"while" {printf("%s\t: while\n", yytext); }
-"return" {printf("%s\t: return\n", yytext); }
-"nil" {printf("%s\t: nil\n", yytext); }
-"true" {printf("%s\t: true\n", yytext); }
-"false" {printf("%s\t: false\n", yytext); }
-{arithmeticOperator} {printf("%s\t: math\n", yytext); }
-{relationalOperator} {printf("%s\t: relational\n", yytext); }
-{bitwiseOperator} {printf("%s\t: bitwise\n", yytext); } 
-{whole} {printf("%s\t: whole number\n", yytext); } 
-{iden}+ {printf("%s\t: iden\n", yytext); } 
-[\n\t ]* {; }
-.  {printf("%s\t: unknown\n", yytext); };
+{singleComment} {return SingleComment; }
+{multiComment} {return MultiComment; }
+{assignment} {return Assignment; }
+"be" {return Be; }
+"if" {return If; }
+"but" {return But; }
+"else" {return Else; }
+"ok" {return Ok; }
+"and" {return And; }
+"or" {return Or; }
+"not"|{unaryOperator} {return Not; }
+"redo" {return Redo; }
+"quite" {return Quite; }
+"as" {return As; }
+"while" {return While; }
+"return" {return Return; }
+"nil" {return Nil; }
+"true" {return True; }
+"false" {return False; }
+{arithmeticOperator} {return ArithmeticOperator; }
+{relationalOperator} {return RelationalOperator; }
+{bitwiseOperator} {return BitwiseOperator; } 
+{whole} {return Whole; } 
+{iden}+ {return Iden; }
+[\n\;]+ {return Other;}
+[\t ] {;}
+.  {return *yytext; };
 %%
 
-int main(){
-printf("what are these?\n");
-yylex();
+int yywrap() {
+    return 1;
 }
-int yywrap() { return 1; }
