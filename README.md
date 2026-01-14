@@ -142,10 +142,10 @@ Contoh:
 
 ### Array
 
-Array menggunakan kurawal ```{}``` dan dideklarasikan dengan tanda bintang ```*```.
+Array menggunakan kurawal ```{}``` dan dideklarasikan dengan keyword ```table```.
 
 ```
-  num16* varArray be {1, 2, 3}
+  table(num16) varArray be {1, 2, 3}
 ```
 
 Untuk memperoleh nilai, dapat menggunakan gunakan kurung biasa ```()```.
@@ -175,8 +175,8 @@ Untuk looping tak berujung:
 Contoh:
 
 ```
-  num16* arrayNum be {1, 3, 5, 7, 9}
-  redo arrayNum as i:
+  table(num16) arrayNum be {1, 3, 5, 7, 9}
+  redo arrayNum as int i:
     printf ["%d", i]
   ok
 
