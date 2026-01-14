@@ -227,7 +227,19 @@ ftStringFormat:
 
 
 -- operation
-operations: logicOr|logicAnd|inclusOr|exclusOr|andOp|eqOp|relatOp|shiftOp|addOp|multiOp|unaryOp|primaryOp|ifTern
+operations: logicOr
+          | logicAnd
+          | inclusOr
+          | exclusory
+          | andOp
+          | eqOp
+          | relatOp
+          | shiftOp
+          | addOp
+          | multiOp
+          | unaryOp
+          | primaryOp
+          | ifTern
 logicOr: logicAnd
        | logicOr or logicAnd
 logicAnd: inclusOr
