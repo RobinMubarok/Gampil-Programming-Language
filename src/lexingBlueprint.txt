@@ -48,13 +48,10 @@ varMult: varTyps be expr
 varAssign: iden (be|assignment) expr
 
 -- versatile
-varTyps: varTys varTyp
-varTys: varTyp ',' varTys
-      : iden ',' varTys
-varDecs: varDecl varDec
-       | varDecl varTyp
-varDecl: varDec ',' varDecl
-       | varTyp ',' varDecl
+varTyps: varTyp
+       | iden
+       | varTyp ',' varTyps
+       | iden ',' varTyps
 varDec: varTyp be expr
 varTyp: iden iden
       | advType iden
@@ -66,10 +63,9 @@ regType: <depended by architecture>
 -- Generals
 
 block: ':' stmt ok
-args: arg expr
-    | arg
-arg: expr ',' arg
-   | ',' arg
+args: expr 
+    | expr ',' args
+    | ',' args
 compstmt: varStmt
         | procCall
         | whileLine
@@ -96,28 +92,29 @@ atom: num
 
 funcDec: iden decFunc block
        | advType decFunc block
-decFunc: iden '[' (varDec|varTyp|'?'|parFormal) ']'
-       | iden '[' ']'
-parFormal: parF (varDec|varTyp|'?')
-parF: varDec ',' parF
+decFunc: iden '[' parF ']'
+parF:
+    | varDec
+    | varTyp
+    |'?'
+    | varDec ',' parF
     | varTyp ',' parF
     | '?' ',' parF
 ret: return expr
+   | return
 
 -- Funtion Call
 
 procCall: funcCall
         | asmins '[' opcodes ']'
         | asmins 
-funcCall: expr '[' (expr|parActual|varAssign) ']'
-        | iden '[' (expr|parActual|varAssign) ']'
-        | (iden|expr) '[' ']'
-parActual: parA expr
-         | parA varAssign
-         | parA
-parA: expr ',' parA
-    | varAssign ',' parA
-    | ',' parA
+funcCall: expr '[' parActual ']'
+parActual: 
+         | expr
+         | varAssign
+         | expr ',' parActual
+         | varAssign ',' parActual
+         | ',' parActual
 asmins: <depended by architecture>
 opcodes: <depended by architecture>
 
@@ -136,18 +133,17 @@ loop: loopInfo block
 loopInfo: redo
         | redo each
         | redo quiteEach
-each: expr as (varTyp|varTyps)
-quiteEach: expr quite as (varTyp|varTyps)
-whileLine: while atom
+each: expr as varTyps
+quiteEach: expr quite as varTyps
+whileLine: while expr
 
 -- arrays
 
-table: '{' (element|elements) '}'
-     | '{' '}'
-elements: repeatElm element
-        | repeatElm
-repeatElm: element ',' repeatElm
-         | ',' repeatElm
+table: '{' elements '}'
+elements: 
+        | element
+        | element ',' elements
+        | ',' elements
 element: expr|varDec|varTyp
 indexTab: iden '(' expr ')'
 atrribTab: iden '.' expr
@@ -233,7 +229,7 @@ ftStringFormat:
 -- operation
 operations: logicOr|logicAnd|inclusOr|exclusOr|andOp|eqOp|relatOp|shiftOp|addOp|multiOp|unaryOp|primaryOp|ifTern
 logicOr: logicAnd
-       | logicalOr or logicAnd
+       | logicOr or logicAnd
 logicAnd: inclusOr
         | logicAnd and inclusOr
 inclusOr: exclusOr
