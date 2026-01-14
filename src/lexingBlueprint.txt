@@ -76,7 +76,8 @@ compstmt: varStmt
         | ret
 blocstmt: ifStmt
        | loop
-stmt: compStmt (';'|'\n') stmt
+stmt:
+    | compStmt (';'|'\n') stmt
     | blocStmt stmt
 expr: iden
     | table
