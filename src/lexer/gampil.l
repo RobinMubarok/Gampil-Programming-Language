@@ -19,11 +19,9 @@ unaryOperator [~!]
 iden [_A-Za-z]+[_A-Za-z0-9]*
 whole [0-9]+
 
-stringQuote "\'\'\'"|"\"\"\""
-stringChar [^\'\"\\\n]
-stringEscapeSeq [\\]{sourceCharacters}
 sourceCharacters [\\\'\"abfnrtv]|"ooo"|"xhh"|"N"{iden}|"uxxxx"|"Uxxxxxxxx"
-stringItem {stringEscapeSeq}|{stringChar}
+stringEscapeseq [\\]{sourceCharacters}
+stringChar [^\'\"\\\n]|{stringEscapeseq}
 
 integer {intPart}|[\-]{intPart} 
 float {floatPart}|[\-]{floatPart}
@@ -31,18 +29,18 @@ floatPart ({digitPart}[.]{digitPart}?{exponent}?)|([.]{digitPart}{exponent}?)|({
 exponent [Ee][+\-]{digitPart}
 digitPart {whole}([_]{whole})*
 intPart {decimal}|{binary}|{octal}|{hexDec}|{zeroInt}
-zeroInt [0]+([_][0])*
-hexDec [0][Xx]([_]{hexDigit})+
-octal [0][Oo]([_]{octDigit})+
-binary [0][Bb]([_]{binDigit})+
-decimal {natural}([_]{whole})*
+zeroInt [0]+([_]?[0])*
+hexDec [0][Xx]([_]?{hexDigit})+
+octal [0][Oo]([_]?{octDigit})+
+binary [0][Bb]([_]?{binDigit})+
+decimal {natural}([_]?{whole})*
 hexDigit {whole}|[a-fA-F]
 octDigit [0-7]
 binDigit [0-1]
 natural [1-9]
 
 %%
-(([\']{stringItem}*[\'])|([\"]{stringItem}*[\"]))+ { return StringItem; }
+(([\']({stringChar}|[\"]({intPart}|{iden})[\"])*[\'])|([\"]({stringChar}|[\']({intPart}|{iden})[\'])*[\"]))+ { return StringItem; }
 {singleComment} {return SingleComment; }
 {multiComment} {return MultiComment; }
 {assignment} {return Assignment; }
@@ -67,7 +65,7 @@ natural [1-9]
 {arithmeticOperator} {return ArithmeticOperator; }
 {relationalOperator} {return RelationalOperator; }
 {bitwiseOperator} {return BitwiseOperator; } 
-{iden}+ { return Iden; }
+{iden} { return Iden; }
 [\n\;]+ {return Other;}
 [\t ] {;}
 .  {return *yytext; };
