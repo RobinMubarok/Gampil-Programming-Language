@@ -44,26 +44,28 @@
      RelationalOperator = 260,
      BitwiseOperator = 261,
      Iden = 262,
-     Whole = 263,
-     Be = 264,
-     If = 265,
-     But = 266,
-     Else = 267,
-     Ok = 268,
-     And = 269,
-     Or = 270,
-     Not = 271,
-     Redo = 272,
-     Quite = 273,
-     As = 274,
-     While = 275,
-     Return = 276,
-     Nil = 277,
-     True = 278,
-     False = 279,
-     SingleComment = 280,
-     MultiComment = 281,
-     Other = 282
+     Be = 263,
+     If = 264,
+     But = 265,
+     Else = 266,
+     Ok = 267,
+     And = 268,
+     Or = 269,
+     Not = 270,
+     Redo = 271,
+     Quite = 272,
+     As = 273,
+     While = 274,
+     Return = 275,
+     Nil = 276,
+     True = 277,
+     False = 278,
+     SingleComment = 279,
+     MultiComment = 280,
+     StringItem = 281,
+     IntegerItem = 282,
+     FloatItem = 283,
+     Other = 284
    };
 #endif
 /* Tokens.  */
@@ -72,26 +74,28 @@
 #define RelationalOperator 260
 #define BitwiseOperator 261
 #define Iden 262
-#define Whole 263
-#define Be 264
-#define If 265
-#define But 266
-#define Else 267
-#define Ok 268
-#define And 269
-#define Or 270
-#define Not 271
-#define Redo 272
-#define Quite 273
-#define As 274
-#define While 275
-#define Return 276
-#define Nil 277
-#define True 278
-#define False 279
-#define SingleComment 280
-#define MultiComment 281
-#define Other 282
+#define Be 263
+#define If 264
+#define But 265
+#define Else 266
+#define Ok 267
+#define And 268
+#define Or 269
+#define Not 270
+#define Redo 271
+#define Quite 272
+#define As 273
+#define While 274
+#define Return 275
+#define Nil 276
+#define True 277
+#define False 278
+#define SingleComment 279
+#define MultiComment 280
+#define StringItem 281
+#define IntegerItem 282
+#define FloatItem 283
+#define Other 284
 
 
 

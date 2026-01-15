@@ -11,7 +11,6 @@ int yyerror(char* s);
 %token RelationalOperator 
 %token BitwiseOperator
 %token Iden
-%token Whole
 %token Be
 %token If
 %token But
@@ -30,6 +29,11 @@ int yyerror(char* s);
 %token False
 %token SingleComment 
 %token MultiComment 
+
+%token StringItem
+%token IntegerItem
+%token FloatItem
+
 %token Other
 
 
@@ -38,16 +42,31 @@ prog:
    stmt
 ;
 
-stmt: 
-   | varStmt Other stmt {printf("end");}
+stmt: CompoundStmt
    
-   | procCall Other stmt {printf("end");}
+CompoundStmt :
+             | varStmt Other CompoundStmt {printf("end");}
+             | procCall Other CompoundStmt {printf("end");}
 
 varStmt:
-   Iden Be Whole {printf("var");}
+   Iden Be Expr {printf("Var");}
 
 procCall:
-   Iden '[' Iden ']' {printf("proc");}
+   Iden '[' Args ']' {printf("Proc");}
+
+Args:
+    | Expr
+    | Expr ',' Args
+
+Expr: Iden
+    | Asc
+    | Number
+
+Asc: StringItem {printf("String");}
+
+Number: IntegerItem {printf("Integer");}
+      | FloatItem {printf("Float");}
+ 
 
 %%
 

@@ -181,49 +181,14 @@ octDigit: [0-7]
 hexDigit: whole | [a-f] | [A-F]
 
 -- string
-asc: string | ftString
-string: {stringPrefix}? (stringContent)
-stringPrefix: ([rub]|[RUB])|([Bb][Rr])|([Rr][Bb])
-stringContent:
-             | "\'\'\'" ( ^"\'\'\'" longStringItem)* "\'\'\'"
-             | "\"\"\"" ( ^"\"\"\"" longStringItem)* "\"\"\""
-             | [\'] ( ^[\'] stringItem)* [\']
-             | [\"] ( ^[\"] stringItem)* [\"]
+asc: string+
+string:
+      | [\'] ( ^[\'] stringItem)* [\']
+      | [\"] ( ^[\"] stringItem)* [\"]
 stringItem: stringChar | stringEscapeseq
 stringChar: ^{backslash}|^{newline}
-longStringItem:  stringItem | newline
 stringEscapeseq: '\' sourceCharacters
 sourceCharacters: [\\\'\"abfnrtv]|"ooo"|"xhh"|"N" iden|"uxxxx"|"Uxxxxxxxx"
-ftString: ftStart {ftMiddle}* ftEnd
-        | ftTripString
-ftTripString: ftTripStart {ftMiddlePlus}* ftTripEnd
-ftStart: fstringprefix [\'\"]
-ftTripStart: fstringprefix ("\'\'\'" | "\"\"\"")
-ftEnd: [\'\"]
-ftTripEnd: "\'\'\'" | "\"\"\""
-fstringprefix: [Ff]|[Tt]|([Ff]|[Tt])[Rr]|[Rr]([Ff]|[Tt])
-ftDebugSpecifier: be
-ftMiddlePlus:
-            | ftMiddle
-            | [\n]
-ftMiddle:
-        | ftReplace
-        | ftMid
-ftMid:
-     | ([^\\] [^\n] [^{] [^}] ^ftQuote) sourceCharacters
-     | stringEscapeseq
-     | "{{"
-     | "}}"
-ftReplace: 
-         | '{' expr {ftDebugSpecifier}? {ftStringConversion}? {ftStringFullFormat}? '}'
-         | table
-ftStringConversion:
-                  | [!] [sra]
-ftStringFullFormat:
-                  | ':' {ftStringFormat}*
-ftStringFormat:
-              | ftMiddle
-              | ftReplace
 
 
 -- operation
