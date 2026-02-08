@@ -30,7 +30,15 @@ int yyerror(char* s);
 %token SingleComment 
 %token MultiComment 
 
-%token StringItem
+%token TwoContent
+%token TwoSta
+%token TwoEnd
+%token OneContent
+%token CharQuOne
+%token CharQu
+%token OneSta
+%token OneEnd
+
 %token IntegerItem
 %token FloatItem
 
@@ -49,10 +57,10 @@ CompoundStmt :
              | procCall Other CompoundStmt {printf("end");}
 
 varStmt:
-   Iden Be Expr {printf("Var");}
+   Iden Be Expr {printf("Var:\n");}
 
 procCall:
-   Iden '[' Args ']' {printf("Proc");}
+   Iden '[' Args ']' {printf("Proc:\n");}
 
 Args:
     | Expr
@@ -61,11 +69,22 @@ Args:
 Expr: Iden
     | Asc
     | Number
+    | Boolean
 
-Asc: StringItem {printf("String");}
+Asc: TwoSta TwoStrContent TwoEnd
+   | OneSta OneStrContent OneEnd
 
-Number: IntegerItem {printf("Integer");}
-      | FloatItem {printf("Float");}
+TwoStrContent: 
+             | TwoContent TwoStrContent
+
+OneStrContent: 
+             | OneContent OneStrContent
+
+Number: IntegerItem {printf("\tInteger\n");}
+      | FloatItem {printf("\tFloat\n");}
+
+Boolean: True {printf("\tTrue\n");}
+       | False {printf("\tFalse\n");}
  
 
 %%

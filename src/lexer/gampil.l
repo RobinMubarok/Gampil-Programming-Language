@@ -19,9 +19,12 @@ unaryOperator [~!]
 iden [_A-Za-z]+[_A-Za-z0-9]*
 whole [0-9]+
 
-sourceCharacters [\\\'\"abfnrtv]|"ooo"|"xhh"|"N"{iden}|"uxxxx"|"Uxxxxxxxx"
+%x OneQuote
+%x TwoQuote
+%x ExprField
+sourceCharacters [\\\'\"abfnrtv`]|"ooo"|"xhh"|"N"{iden}|"uxxxx"|"Uxxxxxxxx"
 stringEscapeseq [\\]{sourceCharacters}
-stringChar [^\'\"\\\n]|{stringEscapeseq}
+stringChar [^\"\'\\\n]|{stringEscapeseq}
 
 integer {intPart}|[\-]{intPart} 
 float {floatPart}|[\-]{floatPart}
@@ -40,7 +43,13 @@ binDigit [0-1]
 natural [1-9]
 
 %%
-(([\']({stringChar}|[\"]({intPart}|{iden})[\"])*[\'])|([\"]({stringChar}|[\']({intPart}|{iden})[\'])*[\"]))+ { return StringItem; }
+
+[\"] {BEGIN(TwoQuote); return TwoSta; }
+[\'] {BEGIN(OneQuote); return OneSta;}
+<TwoQuote>{stringChar} {return TwoContent; }
+<TwoQuote>[\"] {BEGIN(INITIAL); return TwoEnd; }
+<OneQuote>{stringChar} {return OneContent; }
+<OneQuote>[\'] {BEGIN(INITIAL); return OneEnd;}
 {singleComment} {return SingleComment; }
 {multiComment} {return MultiComment; }
 {assignment} {return Assignment; }

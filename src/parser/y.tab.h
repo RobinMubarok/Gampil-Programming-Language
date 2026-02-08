@@ -62,10 +62,17 @@
      False = 278,
      SingleComment = 279,
      MultiComment = 280,
-     StringItem = 281,
-     IntegerItem = 282,
-     FloatItem = 283,
-     Other = 284
+     TwoContent = 281,
+     TwoSta = 282,
+     TwoEnd = 283,
+     OneContent = 284,
+     CharQuOne = 285,
+     CharQu = 286,
+     OneSta = 287,
+     OneEnd = 288,
+     IntegerItem = 289,
+     FloatItem = 290,
+     Other = 291
    };
 #endif
 /* Tokens.  */
@@ -92,10 +99,17 @@
 #define False 278
 #define SingleComment 279
 #define MultiComment 280
-#define StringItem 281
-#define IntegerItem 282
-#define FloatItem 283
-#define Other 284
+#define TwoContent 281
+#define TwoSta 282
+#define TwoEnd 283
+#define OneContent 284
+#define CharQuOne 285
+#define CharQu 286
+#define OneSta 287
+#define OneEnd 288
+#define IntegerItem 289
+#define FloatItem 290
+#define Other 291
 
 
 
