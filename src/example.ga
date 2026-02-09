@@ -1,7 +1,7 @@
 `GAMPIL PROGRAMMING LANGUAGE`
 
 
-bitOff main[asc()() args]:
+bitOff main[asc8()() args]:
     
     printf ["Hello World!"]		\ 'Hello World!' program
  
