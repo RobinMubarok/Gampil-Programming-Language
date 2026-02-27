@@ -36,7 +36,7 @@ Tipe data bawaan di bahasa Gampil ada empat jenis:
 - Number (angka), ada ```num16```, ```num32```, dan ```num64``` menggantikan ```signed int```, ```long```, dan ```long long```;
 - Rational (desimal), ada ```rat32```, ```rat64```, dan ```rat128``` menggantikan ```float```, ```double```, dan ```long double```.
 
-Namun, Gampil juga mendukung tipe pada Python.
+Namun, Gampil juga mendukung tipe pada Python, gunakan kata kunci 'let'.
 
 ```
     let varString be "20"
@@ -126,7 +126,7 @@ Percabangan menggunakan kata kunci 'if', 'but', dan 'else'. Tiap kondisi disebut
 Contoh:
 
 ```
-  int x be 5
+  num16 x be 5
 
   if x >= 5:
       printf ["Lebih dari 5"] \ x lebih dari sama dengan 5, output "Lebih dari 5".
