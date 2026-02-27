@@ -39,7 +39,7 @@ Tipe data bawaan di bahasa Gampil ada empat jenis:
 Namun, Gampil juga mendukung tipe pada Python.
 
 ```
-    Any varString be 20
+    let varString be "20"
 ```
 
 Selain itu, juga mendukung variabel untuk mewakili register seperti pada Assembly.
