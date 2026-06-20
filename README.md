@@ -10,19 +10,19 @@ The language design is strongly inspired by both Python and Assembly. Future dev
 
 ### Arithmetic Operators
 
-* `+`, `-`, `*`, `/`, `%`, `^`
+* plus `+`, minus `-`, times `*`, divide `/`, modulo `%`, power `^`
 
 ### Relational Operators
 
-* `<`, `>`, `=`, `!`, `<=`, `>=`, `!=`
+* less than `<`, greater than `>`, equal `=`, not equal `!`, less than or equal `<=`, greater than or equal `>=`, not equal `!=`
 
 ### Bitwise Operators
 
-* `&`, `|`, `||`, `~`, `>>`, `<<`
+* bitwise AND `&`, bitwise OR `|`, bitwise XOR `||`, bitwise NOT `~`, bitwise right shift `>>`, bitwise left shift `<<`
 
 ### Boolean Operators
 
-* `and`, `or`, `not`
+* boolean AND `and`, boolean OR `or`, boolean NOT `not`
 
 ## Hello World
 
@@ -245,10 +245,10 @@ src/example.ga
 
 ### Operator
 
-- ```+```, ```-```, ```*```, ```/```, ```%```, ```^``` Operator Matematika;
-- ```<```, ```>```, ```=```, ```!```, ```<=```, ```>=```, ```!=``` Operator Relasi;
-- ```&```, ```|```, ```||```, ```~```, ```>>```, ```<<``` Operator Bitwise;
-- ```and```, ```or```, ```not``` Operator Boolean.
+- tambah ```+```, kurang ```-```, kali ```*```, bagi ```/```, modulo ```%```, pangkat ```^``` Operator Matematika;
+- kurang dari ```<```, lebih dari ```>```, sama dengan ```=```, tidak sama dengan ```!```, kurang dari atau sama dengan ```<=```, lebih dari atau sama dengan ```>=```, tidak sama dengan ```!=``` Operator Relasi;
+- bitwise and ```&```, bitwise or ```|```, bitwise xor ```||```, bitwise not ```~```, bitwise right shift ```>>```, bitwise left shift ```<<``` Operator Bitwise;
+- boolean and ```and```, boolean or ```or```, boolean not ```not``` Operator Boolean.
 
 ### Hello World
 
