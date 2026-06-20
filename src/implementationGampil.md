@@ -20,7 +20,7 @@ Compilation failed at parse stage."
 
 5. Portability: Gampil asli harus dapat dijalankan di semua OS, seperti pada bahasa pemrograman ANSI C. Oleh karena itu, buat kompiler utamanya dengan ANSI C agar dapat berjalan di semua OS, termasuk standard library Gampil.
 
-6. Usahakan kompiler dapat mengimplementasikan semua kode yang ada di file "D:\Gampil The Language\src\example.ga" dan "D:\Gampil The Language\README.md".
+6. Usahakan kompiler dapat mengimplementasikan semua kode yang ada di file "D:\Gampil The Language\src\example.ga" dan "D:\Gampil The Language\README.md". Saya sudah perbaiki kedua file, coba analisis ulang.
 
 7. Implement "nil" keyword as pointer to nowhere (null pointer).
 
