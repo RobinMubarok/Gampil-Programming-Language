@@ -16,11 +16,13 @@ Error: expected expression (got 'TOK_NUM32')
 Compilation failed at parse stage."
 ```
 
-4. Modularity: Pisahkan python runtime dan assembler. Rancangan seharusnya, pengguna dapat mengganti jenis assembly dengan assembler yang kita sudah miliki, misal arm64, z80, x86, dan sebagainya. Dengan begitu pula, pengguna dapat mengganti jenis runtime dan versi python, seperti cpython, micropython atau jython.
+4. Modularity: Pisahkan kompiler utama, python runtime dan assembler. Rancangan seharusnya, pengguna dapat mengganti jenis assembly dengan assembler yang kita sudah miliki, misal arm64, z80, x86, dan sebagainya. Dengan begitu pula, pengguna dapat mengganti jenis runtime dan versi python, seperti cpython, micropython atau jython.
 
-5. Usahakan kompiler dapat mengimplementasikan semua kode yang ada di file "D:\Gampil The Language\src\example.ga" dan "D:\Gampil The Language\README.md".
+5. Portability: Gampil asli harus dapat dijalankan di semua OS, seperti pada bahasa pemrograman ANSI C. Oleh karena itu, buat kompiler utamanya dengan ANSI C agar dapat berjalan di semua OS.
 
-6. Implement "nil" keyword as pointer to nowhere (null pointer).
+6. Usahakan kompiler dapat mengimplementasikan semua kode yang ada di file "D:\Gampil The Language\src\example.ga" dan "D:\Gampil The Language\README.md".
+
+7. Implement "nil" keyword as pointer to nowhere (null pointer).
 
 # Gampil Language Development Plan
 
