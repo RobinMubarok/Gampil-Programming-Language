@@ -18,6 +18,8 @@ Compilation failed at parse stage."
 
 4. Modularity: Pisahkan python runtime dan assembler. Rancangan seharusnya, pengguna dapat mengganti jenis assembly dengan assembler yang kita sudah miliki, misal arm64, z80, x86, dan sebagainya. Dengan begitu pula, pengguna dapat mengganti jenis runtime dan versi python, seperti cpython, micropython atau jython.
 
+5. Usahakan kompiler dapat mengimplementasikan semua kode yang ada di file "D:\Gampil The Language\src\example.ga".
+
 # Gampil Language Development Plan
 
 This plan details the implementation of new features, semantic rules, syntax enhancements, and architectural modularity in the Gampil Programming Language.
