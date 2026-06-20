@@ -20,6 +20,8 @@ Compilation failed at parse stage."
 
 5. Usahakan kompiler dapat mengimplementasikan semua kode yang ada di file "D:\Gampil The Language\src\example.ga" dan "D:\Gampil The Language\README.md".
 
+6. Implement "nil" keyword as pointer to nowhere (null pointer).
+
 # Gampil Language Development Plan
 
 This plan details the implementation of new features, semantic rules, syntax enhancements, and architectural modularity in the Gampil Programming Language.
