@@ -1,0 +1,5 @@
+\ Hello World test for Gampil compiler
+
+bitOff main[asc8()() args]:
+    printf ["Hello, World!\n"]
+  ok

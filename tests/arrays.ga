@@ -1,0 +1,20 @@
+\ Array / Table / Pointer test for Gampil compiler
+
+bitOff main[asc8()() args]:
+    \ Static array (table row type)
+    num16(3) arr be {1, 3, 5}
+    printf ["arr[0] = %d\n", arr(0)]
+    printf ["arr[1] = %d\n", arr(1)]
+    printf ["arr[2] = %d\n", arr(2)]
+
+    \ Pointer to variable
+    num16 target be 42
+    num16() ptr be @target
+    printf ["*ptr = %d\n", ptr(0)]
+
+    \ Modify through array
+    arr(1) be 99
+    printf ["arr[1] after assign = %d\n", arr(1)]
+
+    printf ["Arrays OK\n"]
+  ok

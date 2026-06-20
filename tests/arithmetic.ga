@@ -1,0 +1,27 @@
+\ Arithmetic test for Gampil compiler
+
+bitOff main[asc8()() args]:
+    num16 x be 10
+    num16 y be 3
+
+    printf ["x = %d\n", x]
+    printf ["y = %d\n", y]
+    printf ["x + y = %d\n", add[x, y]]
+    printf ["x - y = %d\n", sub[x, y]]
+    printf ["x * y = %d\n", mul[x, y]]
+
+    rat32 pi be 3.14
+    printf ["pi = %g\n", pi]
+  ok
+
+num16 add[num16 a, num16 b be 0]:
+    return a + b
+  ok
+
+num16 sub[num16 a, num16 b]:
+    return a - b
+  ok
+
+num16 mul[num16 a, num16 b]:
+    return a * b
+  ok

@@ -1,0 +1,4 @@
+bitOff main[]:
+    let x be 42
+    y be 100
+  ok

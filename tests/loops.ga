@@ -1,0 +1,29 @@
+\ Loop test for Gampil compiler
+
+bitOff main[asc8()() args]:
+    \ Foreach loop over static array
+    num16(5) nums be {10, 20, 30, 40, 50}
+    redo nums as num16 val:
+        printf ["%d ", val]
+      ok
+    printf ["\n"]
+
+    \ While-sugar loop
+    num16 counter be 0
+    redo: while counter < 5
+        counter +be 1
+        printf ["counter: %d\n", counter]
+      ok
+
+    \ Infinite loop with stop
+    num16 x be 3
+    redo:
+        if not x > 0:
+            stop
+          but ok
+        printf ["x = %d\n", x]
+        x -be 1
+      ok
+
+    printf ["Done!\n"]
+  ok

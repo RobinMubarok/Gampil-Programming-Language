@@ -1,0 +1,12 @@
+\ Dynamic type `let` and Python runtime bridge test
+
+bitOff main[asc8()() args]:
+    printf ["--- Starting Python Runtime Test ---\n"]
+    
+    \ Dynamic variables get converted into Python snippets and executed
+    \ by gampil_runtime.py!
+    let x be 42
+    let msg be "Hello from Python Runtime!"
+    
+    printf ["--- End of Test ---\n"]
+  ok
