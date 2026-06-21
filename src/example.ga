@@ -16,8 +16,9 @@ bitOff main[asc8()() args]:
     num32() num2 be num32()[malloc[2]]	\ if the size is empty, variable becomes pointer
     num16() num3 be @x			\ it can also point a variable
     field user be {1, "John Doe"}	\ table column type, with different types are valid as element
-    field hash be {num16 id be 2}	\ hash field type
-    field({num16, num16}) var		\ static field
+
+    field hash be {num16 id be 2, asc8() name be "John Doe", 6, 7, "hello"}	
+    \ hash field type, like lua tables but adding types
 
     printf ["%d", num(0)]		\ table index starts from 0
     printf ["%d", user(0)]		\ either column table
@@ -40,14 +41,15 @@ bitOff main[asc8()() args]:
     `
 
        else and x >= 5:
-           printn ["Exclusion found!"]	\ use 'else' followed by 'and' keyword to prevent these
+           printn ["Exclusion found!"]	\ use 'else' followed by 'and' keyword to prevent these 
+           \ you can also place 'else' everywhere, like "x >= 5 and else" or even only "else" if there are no other conditions
          but
       ok
 
      ` need loops! we invented 'redo' loop! `
 
     redo num as num16 i:
-        printn ["Looping"]		\ looping exact 3 times (only static tables or runtime tables are valid)
+        printn ["Looping"]		\ looping exact 3 times (only static size tables or python runtime tables are valid, malloc ect. not included)
       ok
 
     redo num quite as num16 j:
@@ -56,8 +58,8 @@ bitOff main[asc8()() args]:
       ok
 
     redo:
-        if not x >= 0: 			\ loops forever until x less than 0
-            stop
+        if not x >= 0: 			\ if there is only 'redo' with no 'stop', it loops forever 
+            stop			\ there is a 'stop' keyword, so it only loops until "not x >= 0" is true
           but ok
         x -be 1				\ decrementing x
       ok
@@ -67,7 +69,7 @@ bitOff main[asc8()() args]:
        'redo: while x >= 0; ...' for more conveinence.
     `
 
-    redo: while x < 5			\ preprocessor will convert it into 'redo: if not x < 5: stop;...'
+    redo: while x < 5			\ preprocessor will convert it into 'redo: if not x < 5: stop; but ok ...'
         x be x + 1
       ok
 
@@ -96,7 +98,7 @@ bitOff greet[]:
       size can be 8 to 64 exponentially, but signed (num8, num16, num32, num64)
    rat<size>		: length <size> bit
       size can be 32 to 128 exponentially (rat32, rat64, rat128)
-   field({<types>})	: table type (sizes and types are inferenced)
+   field		: table type (works like lua table, but sizes and types are statically inferenced)
 `
 
 
