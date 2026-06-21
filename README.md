@@ -53,13 +53,13 @@ Gampil provides four built-in data categories:
 
 * **ASCII (Character Types)**
 
-  * `asc8`, `asc16`, and `asc32`
-  * Equivalent to `char`, `unsigned short`, and `unsigned int`
+  * `asc8`, `asc16`, `asc32`, and `asc64`
+  * Equivalent to raw bytes depending on its size
 
 * **Number (Integer Types)**
 
-  * `num16`, `num32`, and `num64`
-  * Equivalent to `signed int`, `long`, and `long long`
+  * `num8`, `num16`, `num32`, and `num64`
+  * Equivalent to raw bytes (signed) depending on its size
 
 * **Rational (Floating-Point Types)**
 
@@ -273,8 +273,8 @@ Contoh:
 Tipe data bawaan di bahasa Gampil ada empat jenis:
 
 - Bit, ada ```bitOff``` dan ```bitOn``` menggantikan ```void``` dan ```boolean```;
-- ASCII (karakter), ada ```asc8```, ```asc16```, dan ```asc32``` menggantikan ```char```, ```unsigned short```, dan ```unsigned int```;
-- Number (angka), ada ```num16```, ```num32```, dan ```num64``` menggantikan ```signed int```, ```long```, dan ```long long```;
+- ASCII (karakter), ada ```asc8```, ```asc16```, ```asc32```, dan ```asc64``` yang mengalokasikan byte tidak bertanda sesuai jumlah yang ditentukan;
+- Number (angka), ada ```num8```, ```num16```, ```num32```, dan ```num64``` yang mengalokasikan byte bertanda sesuai jumlah yang ditentukan;
 - Rational (desimal), ada ```rat32```, ```rat64```, dan ```rat128``` menggantikan ```float```, ```double```, dan ```long double```.
 
 Namun, Gampil juga mendukung tipe pada Python, gunakan kata kunci 'let'.
