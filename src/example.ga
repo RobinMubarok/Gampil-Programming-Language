@@ -23,6 +23,7 @@ bitOff main[asc8()() args]:
     printf ["%d", num(0)]		\ table index starts from 0
     printf ["%d", user(0)]		\ either column table
     printf ["%d", hash.id]		\ except the hashed one
+    printf ["%d", num3(0)]		\ this is how to output the value of the adressed variable
 
     \ if statements
     if x > 5:
