@@ -16,7 +16,7 @@ Error: expected expression (got 'TOK_NUM32')
 Compilation failed at parse stage."
 ```
 
-4. Modularity: Pisahkan kompiler utama, python runtime dan assembler. Rancangan seharusnya, pengguna dapat mengganti jenis assembly dengan assembler yang kita sudah miliki, misal arm64, z80, x86, dan sebagainya. Dengan begitu pula, pengguna dapat mengganti jenis runtime dan versi python yang diinginkan, seperti cpython, atau python jenis lainnya.
+4. Modularity: Pisahkan kompiler utama, python runtime dan assembler. Rancangan seharusnya, pengguna dapat mengganti jenis assembly dengan assembler yang kita sudah miliki, misal arm64, z80, x86, dan sebagainya. Dengan begitu pula, pengguna dapat mengganti jenis runtime dan versi python yang diinginkan, seperti cpython, micropython, jpython, atau python jenis lainnya.
 
 5. Portability: Gampil asli harus dapat dijalankan di semua OS, seperti pada bahasa pemrograman ANSI C. Oleh karena itu, buat kompiler utamanya dengan ANSI C agar dapat berjalan di semua OS, termasuk standard library Gampil.
 
