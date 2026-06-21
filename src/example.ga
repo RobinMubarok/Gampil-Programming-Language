@@ -98,7 +98,7 @@ bitOff greet[]:
       size can be 8 to 64 exponentially, but signed (num8, num16, num32, num64)
    rat<size>		: length <size> bit
       size can be 32 to 128 exponentially (rat32, rat64, rat128)
-   field		: table type (works like lua table, but sizes and types are statically inferenced)
+   field		: table type (works like lua table, but sizes and types are statically inferenced like rust)
 `
 
 
