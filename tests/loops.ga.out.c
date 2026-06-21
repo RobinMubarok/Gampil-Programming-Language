@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <complex.h>
 
 /* --- Forward Declarations --- */
 void _gampil_main(unsigned char** args);
@@ -15,21 +16,21 @@ void _gampil_main(unsigned char** args) {
         int val = nums[_idx_val];
         printf("%d ", val);
     }
-    printf("\n");
+    printf("\\n");
     int counter = 0LL;
     while ((counter < 5LL)) {
         counter += 1LL;
-        printf("counter: %d\n", counter);
+        printf("counter: %d\\n", counter);
     }
     int x = 3LL;
     while (1) {
         if ((!(x) > 0LL)) {
             break;
         }
-        printf("x = %d\n", x);
+        printf("x = %d\\n", x);
         x -= 1LL;
     }
-    printf("Done!\n");
+    printf("Done!\\n");
 }
 
 int main(int argc, char** argv) {

@@ -3,12 +3,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <complex.h>
 
 /* --- Forward Declarations --- */
 void _gampil_main(unsigned char** args);
 
 
 void _gampil_main(unsigned char** args) {
+    (void)args;
     int x = 5LL;
     /* --- Parallel Guard Block --- */
     {
@@ -20,19 +22,19 @@ void _gampil_main(unsigned char** args) {
 (x < 10LL));
         if (_guard2) { _guard0 = 0; _guard1 = 0; }
         if (_guard0) {
-            printf("x is greater than 3\n");
+            printf("x is greater than 3\\n");
         }
         if (_guard1) {
-            printf("x is equal to 5\n");
+            printf("x is equal to 5\\n");
         }
         if (_guard2) {
-            printf("x is less than 10 (exclusive)\n");
+            printf("x is less than 10 (exclusive)\\n");
         }
     } /* --- end Guard Block --- */
     int a = 1LL;
     int b = 0LL;
     if ((a && !(b))) {
-        printf("a is true, b is false\n");
+        printf("a is true, b is false\\n");
     }
 }
 

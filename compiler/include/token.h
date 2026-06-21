@@ -10,6 +10,7 @@ typedef enum {
     /* ── Literals ─────────────────────────────────────────── */
     TOK_INT_LIT,        /* 42, 0x1F, 0b101, 0o77              */
     TOK_FLOAT_LIT,      /* 3.14, 1e10                          */
+    TOK_COMPLEX_LIT,    /* 3.14j, 2j                           */
     TOK_STR_DOUBLE,     /* "hello"                             */
     TOK_STR_SINGLE,     /* 'hello'                             */
     TOK_TRUE,           /* true                                */
@@ -40,6 +41,8 @@ typedef enum {
     TOK_ASC8,           /* asc8    (unsigned char)             */
     TOK_ASC16,          /* asc16   (unsigned short)            */
     TOK_ASC32,          /* asc32   (unsigned int)              */
+    TOK_ASC64,          /* asc64   (unsigned long long)        */
+    TOK_NUM8,           /* num8    (signed char)               */
     TOK_NUM16,          /* num16   (signed int)                */
     TOK_NUM32,          /* num32   (long)                      */
     TOK_NUM64,          /* num64   (long long)                 */

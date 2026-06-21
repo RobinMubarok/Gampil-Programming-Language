@@ -82,8 +82,8 @@ static void skip_newlines(Parser* p) {
 static int is_type_tok(TokenType t) {
     switch (t) {
         case TOK_BITOFF: case TOK_BITON:
-        case TOK_ASC8:  case TOK_ASC16: case TOK_ASC32:
-        case TOK_NUM16: case TOK_NUM32: case TOK_NUM64:
+        case TOK_ASC8:  case TOK_ASC16: case TOK_ASC32: case TOK_ASC64:
+        case TOK_NUM8:  case TOK_NUM16: case TOK_NUM32: case TOK_NUM64:
         case TOK_RAT32: case TOK_RAT64: case TOK_RAT128:
         case TOK_FIELD: case TOK_LET:
             return 1;
@@ -96,6 +96,7 @@ static AstNode* parse_stmt(Parser* p);
 static AstNode* parse_block(Parser* p);
 static AstNode* parse_expr(Parser* p);
 static AstNode* parse_expr_stmt(Parser* p);
+static GampilType parse_type_spec(Parser* p, int* is_pointer, int* array_size);
 
 /* ── Parser constructor ─────────────────────────────────────── */
 
@@ -121,6 +122,7 @@ static int get_unary_prec(TokenType t) {
         default: return -1;
     }
 }
+
 
 static int get_binary_prec(TokenType t) {
     switch (t) {
@@ -167,7 +169,47 @@ static AstNode* parse_primary(Parser* p) {
     /* String literals */
     if (check(p, TOK_STR_DOUBLE) || check(p, TOK_STR_SINGLE)) {
         AstNode* n = ast_new(AST_STR_LIT, ln, col);
-        n->as.str_lit.value = strdup(p->current.value);
+        char* val = p->current.value;
+        char delim = check(p, TOK_STR_DOUBLE) ? '"' : '\'';
+        int is_triple = 0;
+        char* prefix = NULL;
+        
+        char* q = strchr(val, delim);
+        if (q) {
+            if (q > val) {
+                prefix = (char*)malloc(q - val + 1);
+                memcpy(prefix, val, q - val);
+                prefix[q - val] = '\0';
+            }
+            if (q[1] == delim && q[2] == delim) {
+                is_triple = 1;
+                q += 3;
+            } else {
+                q += 1;
+            }
+            
+            int len = strlen(q);
+            if (is_triple && len >= 3) {
+                q[len-3] = '\0';
+            } else if (!is_triple && len >= 1) {
+                q[len-1] = '\0';
+            }
+            n->as.str_lit.value = strdup(q);
+        } else {
+            n->as.str_lit.value = strdup(val);
+        }
+        n->as.str_lit.prefix = prefix;
+        n->as.str_lit.delim = delim;
+        n->as.str_lit.is_triple = is_triple;
+        
+        advance(p);
+        return n;
+    }
+    
+    /* Complex literal */
+    if (check(p, TOK_COMPLEX_LIT)) {
+        AstNode* n = ast_new(AST_COMPLEX_LIT, ln, col);
+        n->as.complex_lit.value = strdup(p->current.value);
         advance(p);
         return n;
     }
@@ -207,6 +249,24 @@ static AstNode* parse_primary(Parser* p) {
         return n;
     }
 
+    /* type cast / pointer cast */
+    if (is_type_tok(p->current.type)) {
+        int is_ptr = 0, arr_sz = 0;
+        GampilType gt = parse_type_spec(p, &is_ptr, &arr_sz);
+        if (check(p, TOK_LBRACKET)) {
+            advance(p);
+            AstNode* n = ast_new(AST_CAST_EXPR, ln, col);
+            n->as.cast_expr.target_type = gt;
+            n->as.cast_expr.is_pointer = is_ptr;
+            n->as.cast_expr.expr = parse_expr(p);
+            consume(p, TOK_RBRACKET, "expected ']' after cast expression");
+            return n;
+        } else {
+            parser_error(p, "expected '[' for type cast");
+            return NULL;
+        }
+    }
+
     /* Table literal: { ... } */
     if (check(p, TOK_LBRACE)) {
         advance(p);
@@ -237,6 +297,13 @@ static AstNode* parse_primary(Parser* p) {
         AstNode* inner = parse_expr(p);
         consume(p, TOK_RPAREN, "expected ')'");
         return inner;
+    }
+
+    /* Nil literal */
+    if (check(p, TOK_NIL)) {
+        AstNode* n = ast_new(AST_NIL_LIT, ln, col);
+        advance(p);
+        return n;
     }
 
     /* Identifiers: may be followed by '[' (call) or '(' (index) */
@@ -602,17 +669,39 @@ static AstNode* parse_stmt(Parser* p) {
         /* Special check for field({types}) */
         if (check(p, TOK_FIELD) && check2(p, TOK_LPAREN)) {
             advance(p); advance(p); /* consume 'field' and '(' */
-            int depth = 1;
-            while (!check(p, TOK_EOF) && depth > 0) {
-                if (check(p, TOK_LPAREN))       { depth++; advance(p); }
-                else if (check(p, TOK_RPAREN))  { depth--; if (depth > 0) advance(p); else break; }
-                else                             advance(p);
+            AstList* fparams = NULL;
+            if (check(p, TOK_LBRACE)) {
+                advance(p);
+                while (!check(p, TOK_RBRACE) && !check(p, TOK_EOF)) {
+                    if (is_type_tok(p->current.type)) {
+                        int p_is_ptr = 0, p_arr_sz = 0;
+                        GampilType pt = parse_type_spec(p, &p_is_ptr, &p_arr_sz);
+                        AstNode* fn = ast_new(AST_VAR_DECL, p->current.line, p->current.col);
+                        fn->as.var_decl.type = pt;
+                        fn->as.var_decl.is_pointer = p_is_ptr;
+                        fn->as.var_decl.array_size = p_arr_sz;
+                        fn->as.var_decl.name = strdup("");
+                        fparams = astlist_append(fparams, fn);
+                    } else if (check(p, TOK_IDENT)) {
+                        advance(p);
+                    }
+                    if (check(p, TOK_COMMA)) advance(p);
+                }
+                consume(p, TOK_RBRACE, "expected '}'");
             }
             consume(p, TOK_RPAREN, "expected ')'");
             AstNode* n = ast_new(AST_VAR_DECL, ln_decl, col_decl);
             n->as.var_decl.type = GTYPE_FIELD;
-            n->as.var_decl.name = p->current.value ? strdup(p->current.value) : strdup("field_var");
+            if (!check(p, TOK_IDENT)) { parser_error(p, "expected identifier after field(...)"); return n; }
+            n->as.var_decl.name = strdup(p->current.value);
+            n->as.var_decl.field_params = fparams;
             advance(p);
+            
+            /* Optional 'be' initializer */
+            if (check(p, TOK_BE)) {
+                advance(p);
+                n->as.var_decl.initializer = parse_expr(p);
+            }
             return n;
         }
 

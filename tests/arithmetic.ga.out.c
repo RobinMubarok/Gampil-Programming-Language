@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <complex.h>
 
 /* --- Forward Declarations --- */
 void _gampil_main(unsigned char** args);
@@ -12,27 +13,34 @@ int mul(int a, int b);
 
 
 int add(int a, int b) {
+(void)a;
+(void)b;
     return (a + b);
 }
 
 int sub(int a, int b) {
+(void)a;
+(void)b;
     return (a - b);
 }
 
 int mul(int a, int b) {
+(void)a;
+(void)b;
     return (a * b);
 }
 
 void _gampil_main(unsigned char** args) {
+    (void)args;
     int x = 10LL;
     int y = 3LL;
-    printf("x = %d\n", x);
-    printf("y = %d\n", y);
-    printf("x + y = %d\n", add(x, y));
-    printf("x - y = %d\n", sub(x, y));
-    printf("x * y = %d\n", mul(x, y));
+    printf("x = %d\\n", x);
+    printf("y = %d\\n", y);
+    printf("x + y = %d\\n", add(x, y));
+    printf("x - y = %d\\n", sub(x, y));
+    printf("x * y = %d\\n", mul(x, y));
     float pi = 3.14;
-    printf("pi = %g\n", pi);
+    printf("pi = %g\\n", pi);
 }
 
 int main(int argc, char** argv) {

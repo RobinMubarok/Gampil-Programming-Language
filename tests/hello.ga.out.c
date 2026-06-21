@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <complex.h>
 
 /* --- Forward Declarations --- */
 void _gampil_main(unsigned char** args);
@@ -10,7 +11,7 @@ void _gampil_main(unsigned char** args);
 
 void _gampil_main(unsigned char** args) {
     (void)args;
-    printf("Hello, World!\n");
+    printf("Hello, World!\\n");
 }
 
 int main(int argc, char** argv) {

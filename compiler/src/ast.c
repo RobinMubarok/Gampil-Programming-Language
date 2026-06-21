@@ -16,8 +16,10 @@ GampilType tok_to_gtype(TokenType t) {
         case TOK_BITON:  return GTYPE_BITON;
         case TOK_ASC8:   return GTYPE_ASC8;
         case TOK_ASC16:  return GTYPE_ASC16;
-        case TOK_ASC32:  return GTYPE_ASC32;
-        case TOK_NUM16:  return GTYPE_NUM16;
+        case TOK_ASC32: return GTYPE_ASC32;
+        case TOK_ASC64: return GTYPE_ASC64;
+        case TOK_NUM8:  return GTYPE_NUM8;
+        case TOK_NUM16: return GTYPE_NUM16;
         case TOK_NUM32:  return GTYPE_NUM32;
         case TOK_NUM64:  return GTYPE_NUM64;
         case TOK_RAT32:  return GTYPE_RAT32;
@@ -35,8 +37,10 @@ const char* gtype_to_c(GampilType t) {
         case GTYPE_BITON:   return "int";         /* boolean */
         case GTYPE_ASC8:    return "unsigned char";
         case GTYPE_ASC16:   return "unsigned short";
-        case GTYPE_ASC32:   return "unsigned int";
-        case GTYPE_NUM16:   return "int";
+        case GTYPE_ASC32:  return "unsigned int";
+        case GTYPE_ASC64:  return "unsigned long long";
+        case GTYPE_NUM8:   return "signed char";
+        case GTYPE_NUM16:  return "short";
         case GTYPE_NUM32:   return "long";
         case GTYPE_NUM64:   return "long long";
         case GTYPE_RAT32:   return "float";
@@ -155,6 +159,14 @@ void ast_print(AstNode* node, int indent) {
             }
             ast_print(node->as.redo_loop.body, indent+1);
             break;
+        case AST_MALLOC_CALL:
+            printf("AST_MALLOC_CALL\n");
+            ast_print(node->as.malloc_call.size_expr, indent+1);
+            break;
+        case AST_CAST_EXPR:
+            printf("AST_CAST_EXPR target=%s ptr=%d\n", gtype_to_c(node->as.cast_expr.target_type), node->as.cast_expr.is_pointer);
+            ast_print(node->as.cast_expr.expr, indent+1);
+            break;
         case AST_RETURN_STMT:
             printf("RETURN\n");
             ast_print(node->as.ret.value, indent+1);
@@ -198,7 +210,16 @@ void ast_print(AstNode* node, int indent) {
         case AST_IDENT:       printf("IDENT %s\n",  node->as.ident.name); break;
         case AST_INT_LIT:     printf("INT %lld\n",   node->as.int_lit.value); break;
         case AST_FLOAT_LIT:   printf("FLOAT %g\n",  node->as.float_lit.value); break;
-        case AST_STR_LIT:     printf("STR \"%s\"\n", node->as.str_lit.value); break;
+        case AST_COMPLEX_LIT: printf("COMPLEX %s\n", node->as.complex_lit.value); break;
+        case AST_STR_LIT:     
+            printf("STR %s%s%c%s%c%s\n", 
+                   node->as.str_lit.prefix ? node->as.str_lit.prefix : "",
+                   node->as.str_lit.is_triple ? (node->as.str_lit.delim == '"' ? "\"\"" : "''") : "",
+                   node->as.str_lit.delim,
+                   node->as.str_lit.value,
+                   node->as.str_lit.delim,
+                   node->as.str_lit.is_triple ? (node->as.str_lit.delim == '"' ? "\"\"" : "''") : ""); 
+            break;
         case AST_BOOL_LIT:    printf("BOOL %s\n",    node->as.bool_lit.value ? "true" : "false"); break;
         case AST_NIL_LIT:     printf("NIL\n"); break;
         case AST_TABLE_LIT:
@@ -286,11 +307,16 @@ void ast_free(AstNode* node) {
             ast_free(node->as.field_access.object);
             break;
         case AST_IDENT:     free(node->as.ident.name); break;
-        case AST_STR_LIT:   free(node->as.str_lit.value); break;
+        case AST_STR_LIT:   
+            free(node->as.str_lit.value); 
+            if (node->as.str_lit.prefix) free(node->as.str_lit.prefix);
+            break;
+        case AST_COMPLEX_LIT: free(node->as.complex_lit.value); break;
         case AST_ADDR_OF:   free(node->as.addr_of.var); break;
         case AST_TABLE_LIT: astlist_free(node->as.table.elements); break;
         case AST_PYRUNTIME_STMT: free(node->as.pyruntime.snippet); break;
         case AST_MALLOC_CALL: ast_free(node->as.malloc_call.size_expr); break;
+        case AST_CAST_EXPR: ast_free(node->as.cast_expr.expr); break;
         case AST_EXPR_STMT: ast_free(node->as.expr_stmt.expr); break;
         default: break;
     }

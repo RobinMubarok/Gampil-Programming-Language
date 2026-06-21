@@ -28,15 +28,15 @@ char* read_file(const char* path) {
 const char* token_type_str(TokenType t) {
     switch (t) {
 #define X(n) case n: return #n;
-        X(TOK_INT_LIT)   X(TOK_FLOAT_LIT) X(TOK_STR_DOUBLE) X(TOK_STR_SINGLE)
+        X(TOK_INT_LIT)   X(TOK_FLOAT_LIT) X(TOK_COMPLEX_LIT) X(TOK_STR_DOUBLE) X(TOK_STR_SINGLE)
         X(TOK_TRUE)      X(TOK_FALSE)      X(TOK_NIL)
         X(TOK_BE)        X(TOK_IF)         X(TOK_BUT)        X(TOK_ELSE)
         X(TOK_OK)        X(TOK_AND)        X(TOK_OR)         X(TOK_NOT)
         X(TOK_REDO)      X(TOK_QUITE)      X(TOK_AS)         X(TOK_WHILE)
         X(TOK_RETURN)    X(TOK_STOP)       X(TOK_LET)        X(TOK_MALLOC)
         X(TOK_BITOFF)    X(TOK_BITON)
-        X(TOK_ASC8)      X(TOK_ASC16)      X(TOK_ASC32)
-        X(TOK_NUM16)     X(TOK_NUM32)      X(TOK_NUM64)
+        X(TOK_ASC8)      X(TOK_ASC16)      X(TOK_ASC32)      X(TOK_ASC64)
+        X(TOK_NUM8)      X(TOK_NUM16)      X(TOK_NUM32)      X(TOK_NUM64)
         X(TOK_RAT32)     X(TOK_RAT64)      X(TOK_RAT128)
         X(TOK_FIELD)     X(TOK_PRINTF)     X(TOK_PRINTN)     X(TOK_PRINT)
         X(TOK_PLUS)      X(TOK_MINUS)      X(TOK_STAR)       X(TOK_SLASH)
@@ -120,9 +120,9 @@ static KwEntry kw_table[] = {
     {"malloc", TOK_MALLOC},
     /* Type keywords */
     {"bitOff", TOK_BITOFF}, {"bitOn",  TOK_BITON},
-    {"asc8",   TOK_ASC8},   {"asc16",  TOK_ASC16}, {"asc32",  TOK_ASC32},
-    {"num16",  TOK_NUM16},  {"num32",  TOK_NUM32},  {"num64",  TOK_NUM64},
-    {"rat32",  TOK_RAT32},  {"rat64",  TOK_RAT64},  {"rat128", TOK_RAT128},
+    {"asc8",   TOK_ASC8},   {"asc16",  TOK_ASC16}, {"asc32",  TOK_ASC32}, {"asc64",  TOK_ASC64},
+    {"num8",   TOK_NUM8},   {"num16",  TOK_NUM16}, {"num32",  TOK_NUM32}, {"num64",  TOK_NUM64},
+    {"rat32",  TOK_RAT32},  {"rat64",  TOK_RAT64}, {"rat128", TOK_RAT128},
     {"field",  TOK_FIELD},
     /* Builtins */
     {"printf", TOK_PRINTF}, {"printn", TOK_PRINTN}, {"print",  TOK_PRINT},
@@ -137,33 +137,79 @@ static TokenType lookup_keyword(const char* word) {
 }
 
 /* ── String reading ─────────────────────────────────────────── */
-static Token read_string(Lexer* l, char delim, int line, int col) {
-    /* consume opening quote (already peeked) */
-    advance_ch(l);
-    char buf[4096];
+static Token read_string(Lexer* l, char delim, int line, int col, const char* prefix) {
+    /* check for triple quote */
+    int is_triple = 0;
+    if (l->pos + 2 < l->length && l->source[l->pos] == delim && l->source[l->pos+1] == delim && l->source[l->pos+2] == delim) {
+        is_triple = 1;
+        advance_ch(l); advance_ch(l); advance_ch(l);
+    } else {
+        advance_ch(l); /* consume opening quote */
+    }
+
+    /* check if raw string */
+    int is_raw = 0;
+    if (prefix) {
+        for (int i = 0; prefix[i]; i++) {
+            if (prefix[i] == 'r' || prefix[i] == 'R') is_raw = 1;
+        }
+    }
+
+    char* buf = (char*)malloc(65536);
     int  bi = 0;
-    while (!at_end(l) && peek_ch(l) != delim) {
+
+    /* Add prefix and delimit information to the token value to parse later, 
+     * but wait, it's easier to just store it in ast. 
+     * Actually, if we just prepend the prefix to the string value and keep the quotes,
+     * the parser can handle it.
+     * For now, let's just store the exact source representation!
+     * So if prefix is "r", we prepend it.
+     */
+    if (prefix) {
+        for (int i = 0; prefix[i]; i++) buf[bi++] = prefix[i];
+    }
+    if (is_triple) {
+        buf[bi++] = delim; buf[bi++] = delim; buf[bi++] = delim;
+    } else {
+        buf[bi++] = delim;
+    }
+
+    while (!at_end(l)) {
+        if (is_triple) {
+            if (peek_ch(l) == delim && peek2_ch(l) == delim && l->pos + 2 < l->length && l->source[l->pos+2] == delim) {
+                break;
+            }
+        } else {
+            if (peek_ch(l) == delim) break;
+            if (peek_ch(l) == '\n') break; // single line string ends at newline (error, but handled)
+        }
+
         char c = advance_ch(l);
-        if (c == '\\') {
+        if (c == '\\' && !is_raw) {
             if (at_end(l)) break;
             char esc = advance_ch(l);
-            switch (esc) {
-                case 'n':  buf[bi++] = '\n'; break;
-                case 't':  buf[bi++] = '\t'; break;
-                case 'r':  buf[bi++] = '\r'; break;
-                case '\\': buf[bi++] = '\\'; break;
-                case '"':  buf[bi++] = '"';  break;
-                case '\'': buf[bi++] = '\''; break;
-                default:   buf[bi++] = '\\'; buf[bi++] = esc; break;
-            }
+            buf[bi++] = '\\';
+            buf[bi++] = esc;
         } else {
             buf[bi++] = c;
         }
-        if (bi >= 4090) break;
+        if (bi >= 65530) break;
     }
-    if (!at_end(l)) advance_ch(l); /* closing quote */
+
+    if (is_triple) {
+        if (!at_end(l)) advance_ch(l);
+        if (!at_end(l)) advance_ch(l);
+        if (!at_end(l)) advance_ch(l);
+        buf[bi++] = delim; buf[bi++] = delim; buf[bi++] = delim;
+    } else {
+        if (!at_end(l) && peek_ch(l) == delim) advance_ch(l);
+        buf[bi++] = delim;
+    }
     buf[bi] = '\0';
-    return make_tok(delim == '"' ? TOK_STR_DOUBLE : TOK_STR_SINGLE, buf, line, col);
+    
+    Token t = make_tok(delim == '"' ? TOK_STR_DOUBLE : TOK_STR_SINGLE, buf, line, col);
+    free(buf);
+    return t;
 }
 
 /* ── Number reading ─────────────────────────────────────────── */
@@ -198,16 +244,24 @@ static Token read_number(Lexer* l, int line, int col) {
         }
     }
 
-    /* Decimal / float */
-    while (!at_end(l) && (isdigit(peek_ch(l)) || peek_ch(l) == '_'))
-        { char c = advance_ch(l); if (c != '_') buf[bi++] = c; }
-
-    if (!at_end(l) && peek_ch(l) == '.') {
+    if (peek_ch(l) == '.') {
         is_float = 1;
         buf[bi++] = advance_ch(l);
         while (!at_end(l) && (isdigit(peek_ch(l)) || peek_ch(l) == '_'))
             { char c = advance_ch(l); if (c != '_') buf[bi++] = c; }
+    } else {
+        /* Decimal / float */
+        while (!at_end(l) && (isdigit(peek_ch(l)) || peek_ch(l) == '_'))
+            { char c = advance_ch(l); if (c != '_') buf[bi++] = c; }
+
+        if (!at_end(l) && peek_ch(l) == '.') {
+            is_float = 1;
+            buf[bi++] = advance_ch(l);
+            while (!at_end(l) && (isdigit(peek_ch(l)) || peek_ch(l) == '_'))
+                { char c = advance_ch(l); if (c != '_') buf[bi++] = c; }
+        }
     }
+    
     if (!at_end(l) && (peek_ch(l) == 'e' || peek_ch(l) == 'E')) {
         is_float = 1;
         buf[bi++] = advance_ch(l);
@@ -216,6 +270,14 @@ static Token read_number(Lexer* l, int line, int col) {
         while (!at_end(l) && isdigit(peek_ch(l)))
             buf[bi++] = advance_ch(l);
     }
+    
+    /* Complex literal */
+    if (!at_end(l) && (peek_ch(l) == 'j' || peek_ch(l) == 'J')) {
+        buf[bi++] = advance_ch(l);
+        buf[bi] = '\0';
+        return make_tok(TOK_COMPLEX_LIT, buf, line, col);
+    }
+
     buf[bi] = '\0';
     return make_tok(is_float ? TOK_FLOAT_LIT : TOK_INT_LIT, buf, line, col);
 }
@@ -280,12 +342,42 @@ static Token scan_one(Lexer* l) {
         return make_tok(TOK_COMMENT, NULL, line, col);
     }
 
-    /* String literals */
-    if (c == '"') return read_string(l, '"', line, col);
-    if (c == '\'') return read_string(l, '\'', line, col);
+    /* String prefix check */
+    if (isalpha(c)) {
+        size_t saved_pos = l->pos;
+        int saved_line = l->line, saved_col = l->col;
+        char prefix[10]; int pi = 0;
+        prefix[pi++] = c;
+        while (!at_end(l) && isalpha(peek_ch(l)) && pi < 9) {
+            prefix[pi++] = advance_ch(l);
+        }
+        prefix[pi] = '\0';
+        char n = peek_ch(l);
+        if ((n == '"' || n == '\'') && (
+            !strcmp(prefix, "r") || !strcmp(prefix, "R") ||
+            !strcmp(prefix, "u") || !strcmp(prefix, "U") ||
+            !strcmp(prefix, "b") || !strcmp(prefix, "B") ||
+            !strcmp(prefix, "f") || !strcmp(prefix, "F") ||
+            !strcmp(prefix, "rf") || !strcmp(prefix, "rF") || !strcmp(prefix, "Rf") || !strcmp(prefix, "RF") ||
+            !strcmp(prefix, "fr") || !strcmp(prefix, "fR") || !strcmp(prefix, "Fr") || !strcmp(prefix, "FR") ||
+            !strcmp(prefix, "rb") || !strcmp(prefix, "rB") || !strcmp(prefix, "Rb") || !strcmp(prefix, "RB") ||
+            !strcmp(prefix, "br") || !strcmp(prefix, "bR") || !strcmp(prefix, "Br") || !strcmp(prefix, "BR")
+        )) {
+            return read_string(l, n, line, col, prefix);
+        }
+        l->pos = saved_pos;
+        l->line = saved_line;
+        l->col = saved_col;
+    }
 
-    /* Numbers */
-    if (isdigit(c)) return read_number(l, line, col);
+    /* String literals */
+    if (c == '"') return read_string(l, '"', line, col, NULL);
+    if (c == '\'') return read_string(l, '\'', line, col, NULL);
+
+    /* Numbers (including leading dot floats like .5) */
+    if (isdigit(c) || (c == '.' && isdigit(peek2_ch(l)))) {
+        return read_number(l, line, col);
+    }
 
     /* Minus sign: could be negative number or operator */
     if (c == '-') {
@@ -376,7 +468,9 @@ static Token scan_one(Lexer* l) {
         case '}': return make_tok(TOK_RBRACE,     NULL, line, col);
         case ':': return make_tok(TOK_COLON,      NULL, line, col);
         case ',': return make_tok(TOK_COMMA,      NULL, line, col);
-        case '.': return make_tok(TOK_DOT,        NULL, line, col);
+        case '.': 
+            // We already checked for leading dot float above, so this is just a dot.
+            return make_tok(TOK_DOT,        NULL, line, col);
         default: {
             char err[4] = {c, '\0'};
             return make_tok(TOK_ERROR, err, line, col);

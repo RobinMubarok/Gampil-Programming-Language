@@ -9,8 +9,8 @@ bitOff main[asc8()() args]:
     num16 x; x be 3			\ use ';' for one line
     num16 z be 4
 
-    printf ["added: %d", add[z,b be x]]	\ calling declared function
-    printf ["added: %d", add[z, ]]	\ pre-initialized variable can be skipped
+    printf ["added: %d\n", add[z,b be x]]	\ calling declared function
+    printf ["added: %d\n", add[z, ]]	\ pre-initialized variable can be skipped
 
     num16(3) num be {1, 3, 5}		\ table row type for same type only
     num32() num2 be num32()[malloc[2]]	\ if the size is empty, variable becomes pointer
@@ -20,20 +20,20 @@ bitOff main[asc8()() args]:
     field hash be {num16 id be 2, asc8() name be "John Doe", 6, 7, "hello"}	
     \ hash field type, like lua tables but adding types
 
-    printf ["%d", num(0)]		\ table index starts from 0
-    printf ["%d", user(0)]		\ either column table
-    printf ["%d", hash.id]		\ except the hashed one
-    printf ["%d", num3(0)]		\ this is how to output the value of the adressed variable
+    printf ["%d\n", num(0)]		\ table index starts from 0
+    printf ["%d\n", user(0)]		\ either column table
+    printf ["%d\n", hash.id]		\ except the hashed one
+    printf ["%d\n", num3(0)]		\ this is how to output the value of the adressed variable
 
     \ if statements
     if x > 5:
-           printn ["Higher than 5"]	\ first condition, use 'but' to end block
+           printn ["Higher than 5\n"]	\ first condition, use 'but' to end block
          but
        x = 5:
-           printn ["Equal to 5"]	\ second condition
+           printn ["Equal to 5\n"]	\ second condition
          but
        x <= 5:
-           printn ["Less than 5"]	\ if both second and third true, execution would be parallel
+           printn ["Less than 5\n"]	\ if both second and third true, execution would be parallel
          but				\ these are called 'parallel guard branching'
 
     `
@@ -50,11 +50,11 @@ bitOff main[asc8()() args]:
      ` need loops! we invented 'redo' loop! `
 
     redo num as num16 i:
-        printn ["Looping"]		\ looping exact 3 times (only static size tables or python runtime tables are valid, malloc ect. not included)
+        printn ["Looping1\n"]		\ looping exact 3 times (only static size tables or python runtime tables are valid, malloc ect. not included)
       ok
 
     redo num quite as num16 j:
-        printn ["Looping"]		\ looping 3 times
+        printn ["Looping2"]		\ looping 3 times
         stop				\ but it can stops 
       ok
 

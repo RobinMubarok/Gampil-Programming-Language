@@ -1,0 +1,22 @@
+`GAMPIL PROGRAMMING LANGUAGE - FIELD AND PEP TEST`
+
+bitOff main[]:
+    `Test fields`
+    field({num16, rat32}) my_struct be {5, 3.14}
+    
+    `Test Python Runtime bridging`
+    let my_dynamic be 100
+    my_dynamic +be 50
+    my_dynamic be my_dynamic * 2
+
+    `Test printing fields`
+    printf ["Struct field 0: %d\n", my_struct(0)]
+    printf ["Struct field 1: %f\n", my_struct(1)]
+
+    `Test pointers and nil`
+    num16() my_ptr be nil
+
+    `Test complex literals`
+    let c be 3.14j
+    c be c + 1.0
+ok

@@ -13,6 +13,39 @@
 #include "../include/semantic.h"
 #include "../include/codegen.h"
 
+char* g_python_cmd = NULL;
+char* g_runtime_path = NULL;
+char* g_assembler_cmd = NULL;
+
+static void load_config() {
+    g_assembler_cmd = strdup("gcc -o \"{out}\" \"{src}\" -lm -Wall -Wextra");
+    g_python_cmd = strdup("python");
+    g_runtime_path = strdup("../runtime/gampil_runtime.py");
+
+    FILE* f = fopen("gampil.cfg", "r");
+    if (f) {
+        char line[256];
+        while (fgets(line, sizeof(line), f)) {
+            char* eq = strchr(line, '=');
+            if (eq) {
+                *eq = '\0';
+                char* k = line;
+                char* v = eq + 1;
+                char* nl = strchr(v, '\n'); if (nl) *nl = '\0';
+                nl = strchr(v, '\r'); if (nl) *nl = '\0';
+                if (strcmp(k, "assembler") == 0) { free(g_assembler_cmd); g_assembler_cmd = strdup(v); }
+                if (strcmp(k, "python") == 0) { free(g_python_cmd); g_python_cmd = strdup(v); }
+                if (strcmp(k, "runtime") == 0) { free(g_runtime_path); g_runtime_path = strdup(v); }
+            }
+        }
+        fclose(f);
+    }
+
+    char* env_asm = getenv("GAMPIL_ASSEMBLER"); if (env_asm) { free(g_assembler_cmd); g_assembler_cmd = strdup(env_asm); }
+    char* env_py = getenv("GAMPIL_PYTHON"); if (env_py) { free(g_python_cmd); g_python_cmd = strdup(env_py); }
+    char* env_rt = getenv("GAMPIL_RUNTIME"); if (env_rt) { free(g_runtime_path); g_runtime_path = strdup(env_rt); }
+}
+
 /* ── Usage ──────────────────────────────────────────────────── */
 static void print_usage(const char* prog) {
     fprintf(stderr,
@@ -25,6 +58,9 @@ static void print_usage(const char* prog) {
         "  -c <file>     Write C source to <file> and compile it\n"
         "  --ast         Print AST and exit (debug)\n"
         "  --tokens      Print all tokens and exit (debug)\n"
+        "  --assembler <cmd>  Use custom assembler command (use {src} and {out})\n"
+        "  --python <bin>     Use custom python executable\n"
+        "  --runtime <path>   Use custom gampil_runtime.py path\n"
         "\n"
         "Examples:\n"
         "  %s src/example.ga -o example\n"
@@ -43,6 +79,8 @@ int main(int argc, char* argv[]) {
     int  only_c             = 0;
     int  print_ast          = 0;
     int  print_tokens       = 0;
+    
+    load_config();
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-o") == 0 && i+1 < argc) {
@@ -55,6 +93,12 @@ int main(int argc, char* argv[]) {
             print_ast = 1;
         } else if (strcmp(argv[i], "--tokens") == 0) {
             print_tokens = 1;
+        } else if (strcmp(argv[i], "--assembler") == 0 && i+1 < argc) {
+            free(g_assembler_cmd); g_assembler_cmd = strdup(argv[++i]);
+        } else if (strcmp(argv[i], "--python") == 0 && i+1 < argc) {
+            free(g_python_cmd); g_python_cmd = strdup(argv[++i]);
+        } else if (strcmp(argv[i], "--runtime") == 0 && i+1 < argc) {
+            free(g_runtime_path); g_runtime_path = strdup(argv[++i]);
         } else if (argv[i][0] == '-') {
             fprintf(stderr, "Unknown option: %s\n", argv[i]);
             return 1;
@@ -172,13 +216,26 @@ int main(int argc, char* argv[]) {
 #endif
     }
 
-    char gcc_cmd[1024];
-    snprintf(gcc_cmd, sizeof(gcc_cmd),
-             "gcc -o \"%s\" \"%s\" -lm -Wall -Wextra",
-             bin_out, c_out_path);
+    char build_cmd[2048] = {0};
+    const char* p = g_assembler_cmd;
+    char* out_ptr = build_cmd;
+    while (*p && (out_ptr - build_cmd) < 2000) {
+        if (strncmp(p, "{src}", 5) == 0) {
+            strcpy(out_ptr, c_out_path);
+            out_ptr += strlen(c_out_path);
+            p += 5;
+        } else if (strncmp(p, "{out}", 5) == 0) {
+            strcpy(out_ptr, bin_out);
+            out_ptr += strlen(bin_out);
+            p += 5;
+        } else {
+            *out_ptr++ = *p++;
+        }
+    }
+    *out_ptr = '\0';
 
-    fprintf(stderr, "[gampil] Invoking: %s\n", gcc_cmd);
-    int gcc_result = system(gcc_cmd);
+    fprintf(stderr, "[gampil] Invoking: %s\n", build_cmd);
+    int gcc_result = system(build_cmd);
 
     if (gcc_result != 0) {
         fprintf(stderr, "[gampil] gcc failed with code %d.\n", gcc_result);

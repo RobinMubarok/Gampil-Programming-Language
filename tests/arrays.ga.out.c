@@ -3,22 +3,24 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <complex.h>
 
 /* --- Forward Declarations --- */
 void _gampil_main(unsigned char** args);
 
 
 void _gampil_main(unsigned char** args) {
+    (void)args;
     int arr[3] = {1LL, 3LL, 5LL};
-    printf("arr[0] = %d\n", arr[0LL]);
-    printf("arr[1] = %d\n", arr[1LL]);
-    printf("arr[2] = %d\n", arr[2LL]);
+    printf("arr[0] = %d\\n", arr[0LL]);
+    printf("arr[1] = %d\\n", arr[1LL]);
+    printf("arr[2] = %d\\n", arr[2LL]);
     int target = 42LL;
     int* ptr = &target;
-    printf("*ptr = %d\n", ptr[0LL]);
+    printf("*ptr = %d\\n", ptr[0LL]);
     arr[1LL] = 99LL;
-    printf("arr[1] after assign = %d\n", arr[1LL]);
-    printf("Arrays OK\n");
+    printf("arr[1] after assign = %d\\n", arr[1LL]);
+    printf("Arrays OK\\n");
 }
 
 int main(int argc, char** argv) {

@@ -42,6 +42,7 @@ typedef enum {
     AST_IDENT,          /* identifier reference                    */
     AST_INT_LIT,        /* integer literal                         */
     AST_FLOAT_LIT,      /* float literal                           */
+    AST_COMPLEX_LIT,    /* complex literal                         */
     AST_STR_LIT,        /* string literal                          */
     AST_BOOL_LIT,       /* true / false                            */
     AST_NIL_LIT,        /* nil                                     */
@@ -53,6 +54,7 @@ typedef enum {
     AST_PRINTN_CALL,    /* printn[...]                             */
     AST_PRINT_CALL,     /* print[...]                              */
     AST_MALLOC_CALL,    /* malloc[n]                               */
+    AST_CAST_EXPR,      /* type()[expr]                            */
 
     /* Python runtime call — for `let` types */
     AST_PYRUNTIME_STMT, /* any statement involving `let` vars      */
@@ -61,7 +63,9 @@ typedef enum {
 /* ── Gampil type representation ──────────────────────────────*/
 typedef enum {
     GTYPE_BITOFF,  GTYPE_BITON,
-    GTYPE_ASC8,    GTYPE_ASC16,   GTYPE_ASC32,
+    GTYPE_ASC8,    GTYPE_ASC16,    GTYPE_ASC32,
+    GTYPE_ASC64,
+    GTYPE_NUM8,
     GTYPE_NUM16,   GTYPE_NUM32,   GTYPE_NUM64,
     GTYPE_RAT32,   GTYPE_RAT64,   GTYPE_RAT128,
     GTYPE_FIELD,   /* struct-like */
@@ -191,7 +195,15 @@ struct AstNode {
         struct { double value; } float_lit;
 
         /* AST_STR_LIT */
-        struct { char* value; } str_lit;
+        struct {
+            char* value;
+            char* prefix;
+            char  delim;
+            int   is_triple;
+        } str_lit;
+
+        /* AST_COMPLEX_LIT */
+        struct { char* value; } complex_lit;
 
         /* AST_BOOL_LIT */
         struct { int value; } bool_lit; /* 1=true, 0=false */
@@ -207,6 +219,13 @@ struct AstNode {
 
         /* AST_MALLOC_CALL */
         struct { AstNode* size_expr; } malloc_call;
+        
+        /* AST_CAST_EXPR */
+        struct {
+            GampilType target_type;
+            int        is_pointer;
+            AstNode*   expr;
+        } cast_expr;
 
         /* AST_EXPR_STMT */
         struct { AstNode* expr; } expr_stmt;

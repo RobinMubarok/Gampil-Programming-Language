@@ -17,7 +17,11 @@
 
 import sys
 import os
-import builtins
+import pickle
+try:
+    import builtins
+except ImportError:
+    import __builtin__ as builtins
 
 # ── Gampil built-in functions (Python side) ─────────────────
 
@@ -89,12 +93,15 @@ class GampilFloat:
 
 class GampilTable:
     """Represents field / array types dynamically."""
-    def __init__(self, *elements):
+    def __init__(self, *elements, **kwargs):
         self.elements = list(elements)
+        for k, v in kwargs.items():
+            setattr(self, k, v)
     def __getitem__(self, i): return self.elements[i]
     def __setitem__(self, i, v): self.elements[i] = v
     def __len__(self): return len(self.elements)
-    def __repr__(self): return f"Table({self.elements})"
+    def __iter__(self): return iter(self.elements)
+    def __repr__(self): return f"Table({self.elements}, kwargs={self.__dict__})"
 
 # ── Gampil runtime environment ───────────────────────────────
 
@@ -124,6 +131,9 @@ class GampilRuntime:
             'float':  builtins.float,
             'str':    builtins.str,
             'list':   builtins.list,
+            'set':    builtins.set,
+            'tuple':  builtins.tuple,
+            'frozenset': getattr(builtins, 'frozenset', frozenset),
             'print':  builtins.print,
             'input':  builtins.input,
             'abs':    builtins.abs,
@@ -139,6 +149,23 @@ class GampilRuntime:
             'type':   builtins.type,
             'isinstance': builtins.isinstance,
         }
+        self.state_file = "_gampil_state.pkl"
+        if os.path.exists(self.state_file):
+            try:
+                with open(self.state_file, 'rb') as f:
+                    saved = pickle.load(f)
+                    self.globals.update(saved)
+            except Exception:
+                pass
+
+    def _save_state(self):
+        try:
+            to_save = {k: v for k, v in self.globals.items()
+                       if not k.startswith('__') and not callable(v) and type(v) != type(sys)}
+            with open(self.state_file, 'wb') as f:
+                pickle.dump(to_save, f)
+        except Exception:
+            pass
 
     def execute_file(self, path):
         """Execute a Python snippet file in the Gampil runtime environment."""
@@ -146,6 +173,7 @@ class GampilRuntime:
             with open(path, 'r', encoding='utf-8') as f:
                 code = f.read()
             exec(compile(code, path, 'exec'), self.globals)
+            self._save_state()
         except FileNotFoundError:
             print(f"[gampil_runtime] Error: snippet file '{path}' not found.",
                   file=sys.stderr)
