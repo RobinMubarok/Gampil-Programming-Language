@@ -1,0 +1,28 @@
+` Gampil Flexible Loops and Conditionals Test `
+
+bitOff main[asc8()() args]:
+    \ 1. Flexible else fallback
+    num16 x be 10
+    if x < 5:
+        printf ["Less than 5\n"]
+      but
+    x < 8:
+        printf ["Less than 8\n"]
+      but
+    else:
+        printf ["Default fallback reached!\n"]
+      but
+    ok
+
+    \ 2. Redo loop over table literal with dynamic let iterator
+    redo {1, 2, 3} as let i:
+        printf ["i = %d\n", i]
+      ok
+
+    \ 3. Multi-array and multi-variable loop
+    num16(3) arr1 be {10, 20, 30}
+    num16(3) arr2 be {100, 200, 300}
+    redo arr1, arr2 as let val1, let val2:
+        printf ["val1: %d, val2: %d\n", val1, val2]
+      ok
+ok

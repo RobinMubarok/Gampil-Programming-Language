@@ -1,0 +1,6 @@
+`Simple f-string test`
+
+bitOff main[asc8()() args]:
+    num32 b be 42
+    printf [f"b is {b}\n"]
+ok

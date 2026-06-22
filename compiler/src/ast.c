@@ -27,6 +27,7 @@ GampilType tok_to_gtype(TokenType t) {
         case TOK_RAT128: return GTYPE_RAT128;
         case TOK_FIELD:  return GTYPE_FIELD;
         case TOK_LET:    return GTYPE_DYNAMIC;
+        case TOK_REG:    return GTYPE_REG;
         default:         return GTYPE_UNKNOWN;
     }
 }
@@ -48,6 +49,7 @@ const char* gtype_to_c(GampilType t) {
         case GTYPE_RAT128:  return "long double";
         case GTYPE_FIELD:   return "struct";       /* handled specially */
         case GTYPE_DYNAMIC: return "/* dynamic */"; /* Python runtime    */
+        case GTYPE_REG:     return "int";          /* register bound type */
         default:            return "int";
     }
 }
@@ -67,6 +69,7 @@ const char* gtype_name(GampilType t) {
         case GTYPE_RAT128:  return "rat128";
         case GTYPE_FIELD:   return "field";
         case GTYPE_DYNAMIC: return "let";
+        case GTYPE_REG:     return "register";
         default:            return "unknown";
     }
 }
@@ -153,9 +156,15 @@ void ast_print(AstNode* node, int indent) {
             break;
         case AST_REDO_LOOP:
             printf("REDO_LOOP%s\n", node->as.redo_loop.quite ? " (quite)" : "");
-            if (node->as.redo_loop.array) {
-                print_indent(indent+1); printf("ITER_ARRAY:\n");
-                ast_print(node->as.redo_loop.array, indent+2);
+            if (node->as.redo_loop.arrays) {
+                print_indent(indent+1); printf("ITER_ARRAYS:\n");
+                for (AstList* a = node->as.redo_loop.arrays; a; a = a->next)
+                    ast_print(a->node, indent+2);
+            }
+            if (node->as.redo_loop.iters) {
+                print_indent(indent+1); printf("ITERS:\n");
+                for (AstList* i = node->as.redo_loop.iters; i; i = i->next)
+                    ast_print(i->node, indent+2);
             }
             ast_print(node->as.redo_loop.body, indent+1);
             break;
@@ -180,6 +189,15 @@ void ast_print(AstNode* node, int indent) {
         case AST_ASSIGN_STMT:
             printf("ASSIGN %s\n", node->as.assign.target);
             ast_print(node->as.assign.value, indent+1);
+            break;
+        case AST_MULTI_ASSIGN:
+            printf("MULTI_ASSIGN\n");
+            print_indent(indent+1); printf("TARGETS:\n");
+            for (AstList* c = node->as.multi_assign.targets; c; c = c->next)
+                ast_print(c->node, indent+2);
+            print_indent(indent+1); printf("VALUES:\n");
+            for (AstList* c = node->as.multi_assign.values; c; c = c->next)
+                ast_print(c->node, indent+2);
             break;
         case AST_BINARY_EXPR:
             printf("BINARY_EXPR op=%s\n", token_type_str(node->as.binary.op));
@@ -227,6 +245,7 @@ void ast_print(AstNode* node, int indent) {
             for (AstList* c = node->as.table.elements; c; c = c->next)
                 ast_print(c->node, indent+1);
             break;
+        case AST_ELSE_EXPR:   printf("ELSE\n"); break;
         case AST_ADDR_OF:     printf("ADDR_OF %s\n", node->as.addr_of.var); break;
         case AST_PYRUNTIME_STMT:
             printf("PYRUNTIME: %s\n", node->as.pyruntime.snippet); break;
@@ -255,6 +274,7 @@ void ast_free(AstNode* node) {
             break;
         case AST_VAR_DECL:
             free(node->as.var_decl.name);
+            if (node->as.var_decl.reg_name) free(node->as.var_decl.reg_name);
             ast_free(node->as.var_decl.initializer);
             break;
         case AST_PARAM:
@@ -275,9 +295,9 @@ void ast_free(AstNode* node) {
             break;
         }
         case AST_REDO_LOOP:
-            ast_free(node->as.redo_loop.array);
+            astlist_free(node->as.redo_loop.arrays);
+            astlist_free(node->as.redo_loop.iters);
             ast_free(node->as.redo_loop.while_cond);
-            free(node->as.redo_loop.iter_name);
             ast_free(node->as.redo_loop.body);
             break;
         case AST_RETURN_STMT:  ast_free(node->as.ret.value); break;
@@ -285,6 +305,10 @@ void ast_free(AstNode* node) {
             free(node->as.assign.target);
             ast_free(node->as.assign.value);
             ast_free(node->as.assign.target_index);
+            break;
+        case AST_MULTI_ASSIGN:
+            astlist_free(node->as.multi_assign.targets);
+            astlist_free(node->as.multi_assign.values);
             break;
         case AST_BINARY_EXPR:
             ast_free(node->as.binary.left);
@@ -318,6 +342,7 @@ void ast_free(AstNode* node) {
         case AST_MALLOC_CALL: ast_free(node->as.malloc_call.size_expr); break;
         case AST_CAST_EXPR: ast_free(node->as.cast_expr.expr); break;
         case AST_EXPR_STMT: ast_free(node->as.expr_stmt.expr); break;
+        case AST_ELSE_EXPR: break;
         default: break;
     }
     free(node);

@@ -3,32 +3,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <complex.h>
 
 /* --- Forward Declarations --- */
 void _gampil_main(unsigned char** args);
 
 
 void _gampil_main(unsigned char** args) {
-    printf("--- Starting Python Runtime Test ---\n");
-    /* let x: delegated to Python runtime */
-    {
-        FILE* _pyf = fopen("_gampil_pysnip.py", "w");
-        if (_pyf) {
-            fprintf(_pyf, "%s", "x = 42\n");
-            fclose(_pyf);
-        }
-        system("python ../runtime/gampil_runtime.py _gampil_pysnip.py");
-    }
-    /* let msg: delegated to Python runtime */
-    {
-        FILE* _pyf = fopen("_gampil_pysnip.py", "w");
-        if (_pyf) {
-            fprintf(_pyf, "%s", "msg = \"Hello from Python Runtime!\"\n");
-            fclose(_pyf);
-        }
-        system("python ../runtime/gampil_runtime.py _gampil_pysnip.py");
-    }
-    printf("--- End of Test ---\n");
+    (void)args;
+    printf("--- Starting Python Runtime Test ---\\n");
+    long long x = 42;
+    long long msg = "Hello from Python Runtime!";
+    printf("--- End of Test ---\\n");
 }
 
 int main(int argc, char** argv) {

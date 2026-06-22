@@ -26,30 +26,30 @@ void _gampil_main(unsigned char** args) {
     printf("Hello World!");
     float y = 0.5;
     short x;
-    x = 3LL;
-    short z = 4LL;
+    x = 3;
+    short z = 4;
     printf("added: %d\\n", add(z, x));
-    printf("added: %d\\n", add(z, 0LL));
-    short num[3] = {1LL, 3LL, 5LL};
+    printf("added: %d\\n", add(z, 0));
+    short num[3] = {1, 3, 5};
     long* num2 = 0 /*unsupported expr 29*/;
     short* num3 = &x;
-    struct { long long _0; unsigned char* _1; } user = {1LL, "John Doe"};
-    struct { short id; unsigned char* name; long long _2; long long _3; unsigned char* _4; } hash = {2LL, "John Doe", 6LL, 7LL, "hello"};
-    printf("%d\\n", num[0LL]);
+    struct { long _0; unsigned char* _1; } user = {1, "John Doe"};
+    struct { short id; unsigned char* name; long _2; long _3; unsigned char* _4; } hash = {2, "John Doe", 6, 7, "hello"};
+    printf("%d\\n", num[0]);
     printf("%d\\n", user._0);
     printf("%d\\n", hash.id);
-    printf("%d\\n", num3[0LL]);
+    printf("%d\\n", num3[0]);
     /* --- Parallel Guard Block --- */
     {
-        int _guard0 = (
-(x > 5LL));
-        int _guard1 = (
-(x == 5LL));
-        int _guard2 = (
-(x <= 5LL));
-        int _guard3 = (
-(x >= 5LL));
-        if (_guard3) { _guard0 = 0; _guard1 = 0; _guard2 = 0; }
+        int _else_flag = 1;
+        int _guard0 = ((x > 5));
+        if (_guard0) _else_flag = 0;
+        int _guard1 = ((x == 5));
+        if (_guard1) _else_flag = 0;
+        int _guard2 = ((x <= 5));
+        if (_guard2) _else_flag = 0;
+        int _guard3 = ((_else_flag && (x >= 5)));
+        if (_guard3) _else_flag = 0;
         if (_guard0) {
             printf("Higher than 5\\n", "\n");
         }
@@ -63,23 +63,33 @@ void _gampil_main(unsigned char** args) {
             printf("Exclusion found!", "\n");
         }
     } /* --- end Guard Block --- */
-    for (int _idx_i = 0; _idx_i < 3; _idx_i++) {
-        short i = num[_idx_i];
-        printf("Looping1\\n", "\n");
+    {
+        for (int _idx_52 = 0; _idx_52 < 3; _idx_52++) {
+            short i = num[_idx_52];
+            printf("Looping1\\n", "\n");
+        }
     }
-    for (int _idx_j = 0; _idx_j < 3; _idx_j++) {
-        short j = num[_idx_j];
-        printf("Looping2", "\n");
-        break;
-    }
-    while (1) {
-        if ((!(x) >= 0LL)) {
+    {
+        for (int _idx_56 = 0; _idx_56 < 3; _idx_56++) {
+            short j = num[_idx_56];
+            printf("Looping2", "\n");
             break;
         }
-        x -= 1LL;
     }
-    while ((x < 5LL)) {
-        x = (x + 1LL);
+    while (1) {
+        /* --- Parallel Guard Block --- */
+        {
+            int _else_flag = 1;
+            int _guard0 = ((!(x) >= 0));
+            if (_guard0) _else_flag = 0;
+            if (_guard0) {
+                break;
+            }
+        } /* --- end Guard Block --- */
+        x -= 1;
+    }
+    while ((x < 5)) {
+        x = (x + 1);
     }
 }
 

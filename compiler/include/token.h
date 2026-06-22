@@ -106,6 +106,7 @@ typedef enum {
 
     /* ── Structural ──────────────────────────────────────── */
     TOK_NEWLINE,        /* \n   (statement separator)          */
+    TOK_REG,            /* register identifier (e.g. eax)      */
     TOK_IDENT,          /* identifier                          */
     TOK_COMMENT,        /* comment (skipped by parser)         */
     TOK_EOF,            /* end of file                         */

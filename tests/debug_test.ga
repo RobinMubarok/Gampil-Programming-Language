@@ -1,0 +1,4 @@
+bitOff main[asc8()() args]:
+    num32 b be 42
+    printf ["b is %d\n", b]
+ok

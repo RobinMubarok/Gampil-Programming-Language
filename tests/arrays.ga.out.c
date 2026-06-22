@@ -11,15 +11,15 @@ void _gampil_main(unsigned char** args);
 
 void _gampil_main(unsigned char** args) {
     (void)args;
-    int arr[3] = {1LL, 3LL, 5LL};
-    printf("arr[0] = %d\\n", arr[0LL]);
-    printf("arr[1] = %d\\n", arr[1LL]);
-    printf("arr[2] = %d\\n", arr[2LL]);
-    int target = 42LL;
-    int* ptr = &target;
-    printf("*ptr = %d\\n", ptr[0LL]);
-    arr[1LL] = 99LL;
-    printf("arr[1] after assign = %d\\n", arr[1LL]);
+    short arr[3] = {1, 3, 5};
+    printf("arr[0] = %d\\n", arr[0]);
+    printf("arr[1] = %d\\n", arr[1]);
+    printf("arr[2] = %d\\n", arr[2]);
+    short target = 42;
+    short* ptr = &target;
+    printf("*ptr = %d\\n", ptr[0]);
+    arr[1] = 99;
+    printf("arr[1] after assign = %d\\n", arr[1]);
     printf("Arrays OK\\n");
 }
 

@@ -51,7 +51,7 @@ const char* token_type_str(TokenType t) {
         X(TOK_LBRACKET)  X(TOK_RBRACKET)   X(TOK_LPAREN)     X(TOK_RPAREN)
         X(TOK_LBRACE)    X(TOK_RBRACE)
         X(TOK_COLON)     X(TOK_COMMA)      X(TOK_SEMICOLON)  X(TOK_DOT)
-        X(TOK_AT)        X(TOK_NEWLINE)    X(TOK_IDENT)      X(TOK_COMMENT)
+        X(TOK_AT)        X(TOK_NEWLINE)    X(TOK_REG)        X(TOK_IDENT)      X(TOK_COMMENT)
         X(TOK_EOF)       X(TOK_ERROR)
 #undef X
         default: return "UNKNOWN";
@@ -117,6 +117,7 @@ static KwEntry kw_table[] = {
     {"quite",  TOK_QUITE},  {"as",     TOK_AS},    {"while",  TOK_WHILE},
     {"return", TOK_RETURN}, {"stop",   TOK_STOP},  {"nil",    TOK_NIL},
     {"true",   TOK_TRUE},   {"false",  TOK_FALSE}, {"let",    TOK_LET},
+    {"True",   TOK_TRUE},   {"False",  TOK_FALSE},
     {"malloc", TOK_MALLOC},
     /* Type keywords */
     {"bitOff", TOK_BITOFF}, {"bitOn",  TOK_BITON},
@@ -129,10 +130,25 @@ static KwEntry kw_table[] = {
     {NULL,     TOK_ERROR}
 };
 
+static int is_register_name(const char* name) {
+    static const char* regs[] = {
+        "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rsp", "rbp", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
+        "eax", "ebx", "ecx", "edx", "esi", "edi", "esp", "ebp",
+        "ax", "bx", "cx", "dx", "sp", "bp", "si", "di",
+        "al", "ah", "bl", "bh", "cl", "ch", "dl", "dh",
+        NULL
+    };
+    for (int i = 0; regs[i]; i++) {
+        if (strcmp(regs[i], name) == 0) return 1;
+    }
+    return 0;
+}
+
 static TokenType lookup_keyword(const char* word) {
     for (int i = 0; kw_table[i].word; i++)
         if (strcmp(kw_table[i].word, word) == 0)
             return kw_table[i].type;
+    if (is_register_name(word)) return TOK_REG;
     return TOK_IDENT;
 }
 
@@ -347,7 +363,6 @@ static Token scan_one(Lexer* l) {
         size_t saved_pos = l->pos;
         int saved_line = l->line, saved_col = l->col;
         char prefix[10]; int pi = 0;
-        prefix[pi++] = c;
         while (!at_end(l) && isalpha(peek_ch(l)) && pi < 9) {
             prefix[pi++] = advance_ch(l);
         }

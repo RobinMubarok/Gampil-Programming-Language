@@ -11,24 +11,32 @@ void _gampil_main(unsigned char** args);
 
 void _gampil_main(unsigned char** args) {
     (void)args;
-    int nums[5] = {10LL, 20LL, 30LL, 40LL, 50LL};
-    for (int _idx_val = 0; _idx_val < 5; _idx_val++) {
-        int val = nums[_idx_val];
-        printf("%d ", val);
+    short nums[5] = {10, 20, 30, 40, 50};
+    {
+        for (int _idx_6 = 0; _idx_6 < 5; _idx_6++) {
+            short val = nums[_idx_6];
+            printf("%d ", val);
+        }
     }
     printf("\\n");
-    int counter = 0LL;
-    while ((counter < 5LL)) {
-        counter += 1LL;
+    short counter = 0;
+    while ((counter < 5)) {
+        counter += 1;
         printf("counter: %d\\n", counter);
     }
-    int x = 3LL;
+    short x = 3;
     while (1) {
-        if ((!(x) > 0LL)) {
-            break;
-        }
+        /* --- Parallel Guard Block --- */
+        {
+            int _else_flag = 1;
+            int _guard0 = ((!(x) > 0));
+            if (_guard0) _else_flag = 0;
+            if (_guard0) {
+                break;
+            }
+        } /* --- end Guard Block --- */
         printf("x = %d\\n", x);
-        x -= 1LL;
+        x -= 1;
     }
     printf("Done!\\n");
 }

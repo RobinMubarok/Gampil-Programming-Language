@@ -17,10 +17,32 @@ char* g_python_cmd = NULL;
 char* g_runtime_path = NULL;
 char* g_assembler_cmd = NULL;
 
+#ifdef _WIN32
+__declspec(dllimport) unsigned long __stdcall GetModuleFileNameA(void* hModule, char* lpFilename, unsigned long nSize);
+#endif
+
+static char* get_runtime_path(void) {
+#ifdef _WIN32
+    char exe_path[1024] = {0};
+    unsigned long len = GetModuleFileNameA(NULL, exe_path, sizeof(exe_path) - 1);
+    if (len > 0) {
+        char* last_slash = strrchr(exe_path, '\\');
+        if (last_slash) {
+            *last_slash = '\0';
+            char rt[1024];
+            snprintf(rt, sizeof(rt), "%s\\..\\runtime\\gampil_runtime.py", exe_path);
+            return strdup(rt);
+        }
+    }
+#endif
+    return strdup("../runtime/gampil_runtime.py");
+}
+
 static void load_config() {
     g_assembler_cmd = strdup("gcc -o \"{out}\" \"{src}\" -lm -Wall -Wextra");
     g_python_cmd = strdup("python");
-    g_runtime_path = strdup("../runtime/gampil_runtime.py");
+    g_runtime_path = get_runtime_path();
+
 
     FILE* f = fopen("gampil.cfg", "r");
     if (f) {

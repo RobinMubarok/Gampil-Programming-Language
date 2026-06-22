@@ -1,25 +1,24 @@
-\ Conditional / Guard test for Gampil compiler
+bitOff main[]:
+    num32 x be 10
 
-bitOff main[asc8()() args]:
-    num16 x be 5
-
-    \ Simple if guard
-    if x > 3:
-        printf ["x is greater than 3\n"]
-      but
-    x = 5:
-        printf ["x is equal to 5\n"]
-      but
-    else and x < 10:
-        printf ["x is less than 10 (exclusive)\n"]
-      but
+    if x < 5:
+        printf["x is less than 5\n"]
+    but x = 5:
+        printf["x is 5\n"]
+    but else:
+        printf["x is greater than 5 (else block hit)\n"]
     ok
 
-    \ Boolean operators
-    num16 a be 1
-    num16 b be 0
-    if a and not b:
-        printf ["a is true, b is false\n"]
-      but
+    num32 y be 20
+    if y = 10:
+        printf["y is 10\n"]
+    but y > 15 and else:
+        printf["y is > 15 and no previous conditions met\n"]
     ok
-  ok
+
+    if y = 20:
+        printf["y is 20\n"]
+    but y > 15 or else and false:
+        printf["y > 15 or (else and false)\n"]
+    ok
+ok

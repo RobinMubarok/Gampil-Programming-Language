@@ -86,6 +86,7 @@ static int is_type_tok(TokenType t) {
         case TOK_NUM8:  case TOK_NUM16: case TOK_NUM32: case TOK_NUM64:
         case TOK_RAT32: case TOK_RAT64: case TOK_RAT128:
         case TOK_FIELD: case TOK_LET:
+        case TOK_REG:
             return 1;
         default: return 0;
     }
@@ -229,6 +230,13 @@ static AstNode* parse_primary(Parser* p) {
         return n;
     }
 
+    /* else (expression flag) */
+    if (check(p, TOK_ELSE)) {
+        AstNode* n = ast_new(AST_ELSE_EXPR, ln, col);
+        advance(p);
+        return n;
+    }
+
     /* Address-of: @varname */
     if (check(p, TOK_AT)) {
         advance(p);
@@ -270,6 +278,7 @@ static AstNode* parse_primary(Parser* p) {
     /* Table literal: { ... } */
     if (check(p, TOK_LBRACE)) {
         advance(p);
+        p->in_table_lit++;
         AstNode* n = ast_new(AST_TABLE_LIT, ln, col);
         AstList* elems = NULL;
         while (!check(p, TOK_RBRACE) && !check(p, TOK_EOF)) {
@@ -287,6 +296,7 @@ static AstNode* parse_primary(Parser* p) {
             if (check(p, TOK_COMMA)) advance(p);
         }
         consume(p, TOK_RBRACE, "expected '}'");
+        p->in_table_lit--;
         n->as.table.elements = elems;
         return n;
     }
@@ -517,7 +527,18 @@ static AstNode* parse_block(Parser* p) {
         if (check(p, TOK_OK) || check(p, TOK_EOF) ||
             check(p, TOK_BUT) || check(p, TOK_ELSE)) break;
         AstNode* s = parse_stmt(p);
-        if (s) stmts = astlist_append(stmts, s);
+        if (s) {
+            if (s->kind == AST_BLOCK) {
+                AstList* item = s->as.block.stmts;
+                while (item) {
+                    stmts = astlist_append(stmts, item->node);
+                    item = item->next;
+                }
+                free(s);
+            } else {
+                stmts = astlist_append(stmts, s);
+            }
+        }
         /* Consume statement-ending newline / semicolon */
         while (check(p, TOK_NEWLINE)) advance(p);
     }
@@ -550,17 +571,10 @@ static AstNode* parse_if_stmt(Parser* p) {
 
         g = (GuardClause*)calloc(1, sizeof(GuardClause));
 
-        /* 'else and <cond>:' → exclusive guard */
-        if (check(p, TOK_ELSE)) {
-            advance(p);
-            consume(p, TOK_AND, "expected 'and' after 'else'");
-            g->is_else_and = 1;
-            g->cond        = parse_expr(p);
-        } else {
-            /* plain guard condition */
-            g->is_else_and = 0;
-            g->cond        = parse_expr(p);
-        }
+        /* Guard condition is just an expression now; `else` is parsed within parse_expr */
+        g->is_else_and = 0;
+        g->cond        = parse_expr(p);
+
         consume(p, TOK_COLON, "expected ':' after guard condition");
         skip_newlines(p);
         g->body = parse_block(p);
@@ -594,8 +608,14 @@ static AstNode* parse_redo_loop(Parser* p) {
         return n;
     }
 
-    /* redo <array> [quite] as <type> <iter>: body ok */
-    n->as.redo_loop.array = parse_expr(p);
+    /* redo <arrays> [quite] as <iters>: body ok */
+    AstList* arrays = NULL;
+    arrays = astlist_append(arrays, parse_expr(p));
+    while (check(p, TOK_COMMA)) {
+        advance(p);
+        arrays = astlist_append(arrays, parse_expr(p));
+    }
+    n->as.redo_loop.arrays = arrays;
 
     if (check(p, TOK_QUITE)) {
         advance(p);
@@ -603,12 +623,42 @@ static AstNode* parse_redo_loop(Parser* p) {
     }
     consume(p, TOK_AS, "expected 'as'");
 
-    /* iterator type + name */
-    int is_ptr = 0, arr_sz = 0;
-    n->as.redo_loop.iter_type = parse_type_spec(p, &is_ptr, &arr_sz);
-    if (!check(p, TOK_IDENT)) { parser_error(p, "expected iterator name"); return n; }
-    n->as.redo_loop.iter_name = strdup(p->current.value);
-    advance(p);
+    /* Parse iterator list */
+    AstList* iters = NULL;
+    while (1) {
+        int is_ptr = 0, arr_sz = 0;
+        GampilType gt = GTYPE_DYNAMIC;
+        char* name = NULL;
+        int iter_ln = p->current.line, iter_col = p->current.col;
+
+        if (is_type_tok(p->current.type)) {
+            gt = parse_type_spec(p, &is_ptr, &arr_sz);
+            if (!check(p, TOK_IDENT)) { parser_error(p, "expected iterator name"); break; }
+            name = strdup(p->current.value);
+            advance(p);
+        } else if (check(p, TOK_IDENT)) {
+            name = strdup(p->current.value);
+            advance(p);
+        } else {
+            parser_error(p, "expected iterator declaration");
+            break;
+        }
+
+        AstNode* iter_node = ast_new(AST_VAR_DECL, iter_ln, iter_col);
+        iter_node->as.var_decl.type = gt;
+        iter_node->as.var_decl.name = name;
+        iter_node->as.var_decl.is_pointer = is_ptr;
+        iter_node->as.var_decl.array_size = arr_sz;
+        
+        iters = astlist_append(iters, iter_node);
+
+        if (check(p, TOK_COMMA)) {
+            advance(p);
+        } else {
+            break;
+        }
+    }
+    n->as.redo_loop.iters = iters;
 
     consume(p, TOK_COLON, "expected ':' after redo header");
     skip_newlines(p);
@@ -705,18 +755,77 @@ static AstNode* parse_stmt(Parser* p) {
             return n;
         }
 
+        TokenType orig_type_tok = p->current.type;
+        char* reg_name = NULL;
+        if (orig_type_tok == TOK_REG) {
+            reg_name = strdup(p->current.value);
+        }
+
         int is_ptr2 = 0, arr_sz2 = 0;
         GampilType gt2 = parse_type_spec(p, &is_ptr2, &arr_sz2);
         
-        if (!check(p, TOK_IDENT)) { parser_error(p, "expected identifier after type"); return NULL; }
+        if (!check(p, TOK_IDENT)) { 
+            parser_error(p, "expected identifier after type"); 
+            if (reg_name) free(reg_name);
+            return NULL; 
+        }
         char* name = p->current.value ? strdup(p->current.value) : strdup("unknown");
         advance(p);
-
+ 
         /* If next token is '[' → function declaration */
         if (check(p, TOK_LBRACKET)) {
+            if (reg_name) free(reg_name);
             return parse_func_decl_tail(p, gt2, is_ptr2, arr_sz2, name, ln_decl, col_decl);
         } else {
-            return parse_var_decl_tail(p, gt2, is_ptr2, arr_sz2, name, ln_decl, col_decl);
+            AstList* targets = NULL;
+            AstNode* t1 = ast_new(AST_VAR_DECL, ln_decl, col_decl);
+            t1->as.var_decl.type = gt2;
+            t1->as.var_decl.name = strdup(name);
+            t1->as.var_decl.is_pointer = is_ptr2;
+            t1->as.var_decl.array_size = arr_sz2;
+            t1->as.var_decl.reg_name = reg_name ? strdup(reg_name) : NULL;
+            targets = astlist_append(targets, t1);
+            
+            while (check(p, TOK_COMMA)) {
+                advance(p);
+                if (is_type_tok(p->current.type)) {
+                    int p_ptr = 0, p_arr = 0;
+                    GampilType pt = parse_type_spec(p, &p_ptr, &p_arr);
+                    if (!check(p, TOK_IDENT)) { parser_error(p, "expected identifier"); break; }
+                    AstNode* tn = ast_new(AST_VAR_DECL, p->current.line, p->current.col);
+                    tn->as.var_decl.type = pt;
+                    tn->as.var_decl.name = strdup(p->current.value);
+                    tn->as.var_decl.is_pointer = p_ptr;
+                    tn->as.var_decl.array_size = p_arr;
+                    targets = astlist_append(targets, tn);
+                    advance(p);
+                } else if (check(p, TOK_IDENT)) {
+                    AstNode* tn = ast_new(AST_IDENT, p->current.line, p->current.col);
+                    tn->as.ident.name = strdup(p->current.value);
+                    targets = astlist_append(targets, tn);
+                    advance(p);
+                } else {
+                    parser_error(p, "expected type or identifier after comma");
+                    break;
+                }
+            }
+            
+            AstList* values = NULL;
+            if (check(p, TOK_BE)) {
+                advance(p);
+                values = astlist_append(values, parse_expr(p));
+                while (!p->in_table_lit && check(p, TOK_COMMA)) {
+                    advance(p);
+                    values = astlist_append(values, parse_expr(p));
+                }
+            }
+            
+            AstNode* m = ast_new(AST_MULTI_ASSIGN, ln_decl, col_decl);
+            m->as.multi_assign.targets = targets;
+            m->as.multi_assign.values = values;
+            
+            if (reg_name) free(reg_name);
+            return m;
         }
     }
 
@@ -749,6 +858,54 @@ static AstNode* parse_stmt(Parser* p) {
 
         /* Assignment: name (be | +be | -be | …) expr */
         TokenType ct = p->current.type;
+        if (ct == TOK_COMMA) {
+            AstList* targets = NULL;
+            AstNode* t1 = ast_new(AST_IDENT, iln, icol);
+            t1->as.ident.name = strdup(name);
+            targets = astlist_append(targets, t1);
+            
+            while (check(p, TOK_COMMA)) {
+                advance(p);
+                if (is_type_tok(p->current.type)) {
+                    int p_ptr = 0, p_arr = 0;
+                    GampilType pt = parse_type_spec(p, &p_ptr, &p_arr);
+                    if (!check(p, TOK_IDENT)) { parser_error(p, "expected identifier"); break; }
+                    AstNode* tn = ast_new(AST_VAR_DECL, p->current.line, p->current.col);
+                    tn->as.var_decl.type = pt;
+                    tn->as.var_decl.name = strdup(p->current.value);
+                    tn->as.var_decl.is_pointer = p_ptr;
+                    tn->as.var_decl.array_size = p_arr;
+                    targets = astlist_append(targets, tn);
+                    advance(p);
+                } else if (check(p, TOK_IDENT)) {
+                    AstNode* tn = ast_new(AST_IDENT, p->current.line, p->current.col);
+                    tn->as.ident.name = strdup(p->current.value);
+                    targets = astlist_append(targets, tn);
+                    advance(p);
+                } else {
+                    parser_error(p, "expected type or identifier after comma");
+                    break;
+                }
+            }
+            
+            AstList* values = NULL;
+            if (check(p, TOK_BE)) {
+                advance(p);
+                values = astlist_append(values, parse_expr(p));
+                while (!p->in_table_lit && check(p, TOK_COMMA)) {
+                    advance(p);
+                    values = astlist_append(values, parse_expr(p));
+                }
+            } else {
+                parser_error(p, "expected 'be' in multi-assignment");
+            }
+            
+            AstNode* m = ast_new(AST_MULTI_ASSIGN, iln, icol);
+            m->as.multi_assign.targets = targets;
+            m->as.multi_assign.values = values;
+            return m;
+        }
+
         if (ct == TOK_BE || ct == TOK_PLUS_BE  || ct == TOK_MINUS_BE ||
             ct == TOK_STAR_BE || ct == TOK_SLASH_BE || ct == TOK_PERCENT_BE ||
             ct == TOK_CARET_BE || ct == TOK_AMP_BE  || ct == TOK_PIPE_BE   ||
@@ -881,7 +1038,18 @@ AstNode* parser_parse(Parser* p) {
         skip_newlines(p);
         if (check(p, TOK_EOF)) break;
         AstNode* s = parse_stmt(p);
-        if (s) decls = astlist_append(decls, s);
+        if (s) {
+            if (s->kind == AST_BLOCK) {
+                AstList* item = s->as.block.stmts;
+                while (item) {
+                    decls = astlist_append(decls, item->node);
+                    item = item->next;
+                }
+                free(s);
+            } else {
+                decls = astlist_append(decls, s);
+            }
+        }
         while (check(p, TOK_NEWLINE)) advance(p);
     }
 

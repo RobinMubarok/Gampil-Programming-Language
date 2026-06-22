@@ -7,24 +7,24 @@
 
 /* --- Forward Declarations --- */
 void _gampil_main(unsigned char** args);
-int add(int a, int b);
-int sub(int a, int b);
-int mul(int a, int b);
+short add(short a, short b);
+short sub(short a, short b);
+short mul(short a, short b);
 
 
-int add(int a, int b) {
+short add(short a, short b) {
 (void)a;
 (void)b;
     return (a + b);
 }
 
-int sub(int a, int b) {
+short sub(short a, short b) {
 (void)a;
 (void)b;
     return (a - b);
 }
 
-int mul(int a, int b) {
+short mul(short a, short b) {
 (void)a;
 (void)b;
     return (a * b);
@@ -32,8 +32,8 @@ int mul(int a, int b) {
 
 void _gampil_main(unsigned char** args) {
     (void)args;
-    int x = 10LL;
-    int y = 3LL;
+    short x = 10;
+    short y = 3;
     printf("x = %d\\n", x);
     printf("y = %d\\n", y);
     printf("x + y = %d\\n", add(x, y));

@@ -56,6 +56,12 @@ typedef enum {
     AST_MALLOC_CALL,    /* malloc[n]                               */
     AST_CAST_EXPR,      /* type()[expr]                            */
 
+    /* Multi-Assignment (varmult) */
+    AST_MULTI_ASSIGN,   /* num8 a, b be 3, 5 */
+
+    /* Else expression */
+    AST_ELSE_EXPR,      /* else */
+
     /* Python runtime call — for `let` types */
     AST_PYRUNTIME_STMT, /* any statement involving `let` vars      */
 } AstKind;
@@ -71,6 +77,7 @@ typedef enum {
     GTYPE_FIELD,   /* struct-like */
     GTYPE_VOID,
     GTYPE_DYNAMIC, /* Python `let` */
+    GTYPE_REG,     /* Register variables */
     GTYPE_UNKNOWN
 } GampilType;
 
@@ -115,6 +122,7 @@ struct AstNode {
             int        array_size;   /* num16(3) → 3; 0=dynamic */
             AstNode*   initializer;  /* NULL if uninitialized   */
             AstList*   field_params; /* for field({types}) var  */
+            char*      reg_name;     /* Register name (e.g. eax) */
         } var_decl;
 
         /* AST_PARAM */
@@ -132,10 +140,9 @@ struct AstNode {
 
         /* AST_REDO_LOOP */
         struct {
-            AstNode*   array;      /* NULL for infinite loop       */
+            AstList*   arrays;     /* List of arrays/exprs         */
             int        quite;      /* 1 = redo arr quite as T i    */
-            char*      iter_name;  /* iterator variable name       */
-            GampilType iter_type;  /* iterator type                */
+            AstList*   iters;      /* List of iterator declarations */
             AstNode*   while_cond; /* "while" sugar condition      */
             AstNode*   body;       /* AST_BLOCK                    */
         } redo_loop;
@@ -150,6 +157,12 @@ struct AstNode {
             AstNode*   value;
             AstNode*   target_index; /* for array assign: arr(i)  */
         } assign;
+
+        /* AST_MULTI_ASSIGN */
+        struct {
+            AstList* targets; /* Identifiers or AST_VAR_DECLs */
+            AstList* values;  /* Right-hand side expressions */
+        } multi_assign;
 
         /* AST_BLOCK */
         struct { AstList* stmts; } block;

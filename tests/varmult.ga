@@ -1,0 +1,20 @@
+bitOff main[]:
+    \ Mixed types and multi-initialization
+    num8 a, num16 b be 3, 5
+    printf["a = %d, b = %d\n", a, b]
+    
+    \ Swap assignment
+    a, b be b, a
+    printf["swapped: a = %d, b = %d\n", a, b]
+    
+    \ Broadcasting
+    num16 y be 0
+    num16 x, y, num8 z be 7
+    printf["broadcast: x = %d, y = %d, z = %d\n", x, y, z]
+
+    \ Mixed declarations and existing variables
+    num16 j be 0
+    num16 i, j be 10, 20
+    num8 k, j, i be 1, 2, 3
+    printf["mixed: k = %d, j = %d, i = %d\n", k, j, i]
+ok

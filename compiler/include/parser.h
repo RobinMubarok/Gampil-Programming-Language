@@ -15,6 +15,7 @@ typedef struct Parser {
     Token   lookahead; /* one token of lookahead            */
     int     had_error;
     char    error_msg[512];
+    int     in_table_lit;
 } Parser;
 
 /* Create a parser from a lexer */

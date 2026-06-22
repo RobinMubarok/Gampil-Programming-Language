@@ -69,6 +69,18 @@ static void sem_error(SemanticCtx* ctx, AstNode* n, const char* msg) {
 static void analyze_node(SemanticCtx* ctx, AstNode* n);
 static void analyze_block(SemanticCtx* ctx, AstNode* block);
 
+static int is_asm_instruction(const char* name) {
+    static const char* insts[] = {
+        "mov", "add", "sub", "mul", "div", "jmp", "cmp", "je", "jne", "jg", "jge", "jl", "jle",
+        "push", "pop", "call", "ret", "int", "nop", "inc", "dec", "xor", "or", "and", "shl", "shr", "lea",
+        NULL
+    };
+    for (int i = 0; insts[i]; i++) {
+        if (strcmp(insts[i], name) == 0) return 1;
+    }
+    return 0;
+}
+
 static void analyze_expr(SemanticCtx* ctx, AstNode* n) {
     if (!n) return;
     switch (n->kind) {
@@ -101,7 +113,7 @@ static void analyze_expr(SemanticCtx* ctx, AstNode* n) {
         case AST_PRINT_CALL: {
             if (n->as.call.callee && n->kind == AST_CALL_EXPR) {
                 Symbol* s = sym_lookup(ctx->symtable, n->as.call.callee);
-                if (!s) {
+                if (!s && !is_asm_instruction(n->as.call.callee)) {
                     char msg[256];
                     snprintf(msg, sizeof(msg), "undefined function '%s'", n->as.call.callee);
                     sem_error(ctx, n, msg);
@@ -185,6 +197,25 @@ static void analyze_node(SemanticCtx* ctx, AstNode* n) {
             analyze_expr(ctx, n->as.assign.target_index);
             break;
         }
+        case AST_MULTI_ASSIGN: {
+            for (AstList* v = n->as.multi_assign.values; v; v = v->next)
+                analyze_expr(ctx, v->node);
+                
+            for (AstList* t = n->as.multi_assign.targets; t; t = t->next) {
+                AstNode* target = t->node;
+                if (target->kind == AST_VAR_DECL) {
+                    analyze_node(ctx, target);
+                } else if (target->kind == AST_IDENT) {
+                    Symbol* s = sym_lookup(ctx->symtable, target->as.ident.name);
+                    if (!s) {
+                        char msg[256];
+                        snprintf(msg, sizeof(msg), "undefined variable '%s'", target->as.ident.name);
+                        sem_error(ctx, n, msg);
+                    }
+                }
+            }
+            break;
+        }
         case AST_IF_STMT:
             for (GuardClause* g = n->as.if_stmt.guards; g; g = g->next) {
                 analyze_expr(ctx, g->cond);
@@ -195,11 +226,15 @@ static void analyze_node(SemanticCtx* ctx, AstNode* n) {
             int prev_in = ctx->in_loop;
             ctx->in_loop++;
             sym_push_scope(ctx->symtable);
-            analyze_expr(ctx, n->as.redo_loop.array);
+            for (AstList* a = n->as.redo_loop.arrays; a; a = a->next)
+                analyze_expr(ctx, a->node);
             analyze_expr(ctx, n->as.redo_loop.while_cond);
-            if (n->as.redo_loop.iter_name) {
-                sym_declare(ctx->symtable, n->as.redo_loop.iter_name,
-                            n->as.redo_loop.iter_type, 0, 0, 0);
+            for (AstList* it = n->as.redo_loop.iters; it; it = it->next) {
+                AstNode* iter_node = it->node;
+                sym_declare(ctx->symtable, iter_node->as.var_decl.name,
+                            iter_node->as.var_decl.type,
+                            iter_node->as.var_decl.is_pointer, 0,
+                            gtype_is_dynamic(iter_node->as.var_decl.type));
             }
             analyze_block(ctx, n->as.redo_loop.body);
             sym_pop_scope(ctx->symtable);

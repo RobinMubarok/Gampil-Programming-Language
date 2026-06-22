@@ -6,36 +6,59 @@
 #include <complex.h>
 
 /* --- Forward Declarations --- */
-void _gampil_main(unsigned char** args);
+void _gampil_main();
 
 
-void _gampil_main(unsigned char** args) {
-    (void)args;
-    int x = 5LL;
+void _gampil_main() {
+    long x = 10;
     /* --- Parallel Guard Block --- */
     {
-        int _guard0 = (
-(x > 3LL));
-        int _guard1 = (
-(x == 5LL));
-        int _guard2 = (
-(x < 10LL));
-        if (_guard2) { _guard0 = 0; _guard1 = 0; }
+        int _else_flag = 1;
+        int _guard0 = ((x < 5));
+        if (_guard0) _else_flag = 0;
+        int _guard1 = ((x == 5));
+        if (_guard1) _else_flag = 0;
+        int _guard2 = (_else_flag);
+        if (_guard2) _else_flag = 0;
         if (_guard0) {
-            printf("x is greater than 3\\n");
+            printf("x is less than 5\\n");
         }
         if (_guard1) {
-            printf("x is equal to 5\\n");
+            printf("x is 5\\n");
         }
         if (_guard2) {
-            printf("x is less than 10 (exclusive)\\n");
+            printf("x is greater than 5 (else block hit)\\n");
         }
     } /* --- end Guard Block --- */
-    int a = 1LL;
-    int b = 0LL;
-    if ((a && !(b))) {
-        printf("a is true, b is false\\n");
-    }
+    long y = 20;
+    /* --- Parallel Guard Block --- */
+    {
+        int _else_flag = 1;
+        int _guard0 = ((y == 10));
+        if (_guard0) _else_flag = 0;
+        int _guard1 = (((y > 15) && _else_flag));
+        if (_guard1) _else_flag = 0;
+        if (_guard0) {
+            printf("y is 10\\n");
+        }
+        if (_guard1) {
+            printf("y is > 15 and no previous conditions met\\n");
+        }
+    } /* --- end Guard Block --- */
+    /* --- Parallel Guard Block --- */
+    {
+        int _else_flag = 1;
+        int _guard0 = ((y == 20));
+        if (_guard0) _else_flag = 0;
+        int _guard1 = (((y > 15) || (_else_flag && 0)));
+        if (_guard1) _else_flag = 0;
+        if (_guard0) {
+            printf("y is 20\\n");
+        }
+        if (_guard1) {
+            printf("y > 15 or (else and false)\\n");
+        }
+    } /* --- end Guard Block --- */
 }
 
 int main(int argc, char** argv) {

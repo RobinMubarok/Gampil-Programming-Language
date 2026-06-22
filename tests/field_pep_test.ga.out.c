@@ -10,52 +10,15 @@ void _gampil_main();
 
 
 void _gampil_main() {
-    struct { int _0; float _1; } my_struct = {5LL, 3.14};
-    /* let my_dynamic: delegated to Python runtime */
-    {
-        FILE* _pyf = fopen("_gampil_pysnip.py", "w");
-        if (_pyf) {
-            fprintf(_pyf, "%s", "my_dynamic = 100\n");
-            fclose(_pyf);
-        }
-        system("python \"../runtime/gampil_runtime.py\" _gampil_pysnip.py");
-    }
-    {
-        FILE* _pyf = fopen("_gampil_pysnip.py", "w");
-        if (_pyf) {
-            fprintf(_pyf, "%s", "my_dynamic += 50\n");
-            fclose(_pyf);
-        }
-        system("python \"../runtime/gampil_runtime.py\" _gampil_pysnip.py");
-    }
-    {
-        FILE* _pyf = fopen("_gampil_pysnip.py", "w");
-        if (_pyf) {
-            fprintf(_pyf, "%s", "my_dynamic = (my_dynamic * 2)\n");
-            fclose(_pyf);
-        }
-        system("python \"../runtime/gampil_runtime.py\" _gampil_pysnip.py");
-    }
+    struct { long _0; double _1; } my_struct = {5, 3.14};
+    long long my_dynamic = 100;
+    my_dynamic += 50;
+    my_dynamic = (my_dynamic * 2);
     printf("Struct field 0: %d\\n", my_struct._0);
     printf("Struct field 1: %f\\n", my_struct._1);
-    int* my_ptr = NULL;
-    /* let c: delegated to Python runtime */
-    {
-        FILE* _pyf = fopen("_gampil_pysnip.py", "w");
-        if (_pyf) {
-            fprintf(_pyf, "%s", "c = 3.14j\n");
-            fclose(_pyf);
-        }
-        system("python \"../runtime/gampil_runtime.py\" _gampil_pysnip.py");
-    }
-    {
-        FILE* _pyf = fopen("_gampil_pysnip.py", "w");
-        if (_pyf) {
-            fprintf(_pyf, "%s", "c = (c + 1)\n");
-            fclose(_pyf);
-        }
-        system("python \"../runtime/gampil_runtime.py\" _gampil_pysnip.py");
-    }
+    short* my_ptr = NULL;
+    long long c = (3.14 * _Complex_I);
+    c = (c + 1);
 }
 
 int main(int argc, char** argv) {
