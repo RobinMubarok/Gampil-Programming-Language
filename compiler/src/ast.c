@@ -156,7 +156,7 @@ void ast_print(AstNode* node, int indent) {
                    node->as.var_decl.name,
                    gtype_name(node->as.var_decl.type),
                    node->as.var_decl.is_pointer ? "()" : "",
-                   node->as.var_decl.array_size ? "(N)" : "");
+                   node->as.var_decl.num_dims > 0 ? "(N)" : "");
             if (node->as.var_decl.initializer)
                 ast_print(node->as.var_decl.initializer, indent+1);
             break;
@@ -214,8 +214,9 @@ void ast_print(AstNode* node, int indent) {
                 ast_print(c->node, indent+1);
             break;
         case AST_ASSIGN_STMT:
-            printf("ASSIGN %s\n", node->as.assign.target);
-            ast_print(node->as.assign.value, indent+1);
+            printf("ASSIGN_STMT\n");
+            ast_print(node->as.assign.target_expr, indent + 1);
+            ast_print(node->as.assign.value, indent + 1);
             break;
         case AST_MULTI_ASSIGN:
             printf("MULTI_ASSIGN\n");
@@ -239,7 +240,8 @@ void ast_print(AstNode* node, int indent) {
         case AST_PRINTF_CALL:
         case AST_PRINTN_CALL:
         case AST_PRINT_CALL:
-            printf("CALL %s\n", node->as.call.callee ? node->as.call.callee : "?");
+            printf("CALL\n");
+            ast_print(node->as.call.callee, indent+1);
             for (AstList* c = node->as.call.args; c; c = c->next)
                 ast_print(c->node, indent+1);
             break;
@@ -273,7 +275,10 @@ void ast_print(AstNode* node, int indent) {
                 ast_print(c->node, indent+1);
             break;
         case AST_ELSE_EXPR:   printf("ELSE\n"); break;
-        case AST_ADDR_OF:     printf("ADDR_OF %s\n", node->as.addr_of.var); break;
+        case AST_ADDR_OF:
+            printf("ADDR_OF\n");
+            ast_print(node->as.addr_of.target, indent+1);
+            break;
         case AST_PYRUNTIME_STMT:
             printf("PYRUNTIME: %s\n", node->as.pyruntime.snippet); break;
         default:              printf("AST_NODE(%d)\n", node->kind); break;
@@ -329,9 +334,8 @@ void ast_free(AstNode* node) {
             break;
         case AST_RETURN_STMT:  ast_free(node->as.ret.value); break;
         case AST_ASSIGN_STMT:
-            free(node->as.assign.target);
+            ast_free(node->as.assign.target_expr);
             ast_free(node->as.assign.value);
-            ast_free(node->as.assign.target_index);
             break;
         case AST_MULTI_ASSIGN:
             astlist_free(node->as.multi_assign.targets);
@@ -346,7 +350,7 @@ void ast_free(AstNode* node) {
         case AST_PRINTF_CALL:
         case AST_PRINTN_CALL:
         case AST_PRINT_CALL:
-            free(node->as.call.callee);
+            ast_free(node->as.call.callee);
             astlist_free(node->as.call.args);
             break;
         case AST_INDEX_EXPR:
@@ -363,7 +367,7 @@ void ast_free(AstNode* node) {
             if (node->as.str_lit.prefix) free(node->as.str_lit.prefix);
             break;
         case AST_COMPLEX_LIT: free(node->as.complex_lit.value); break;
-        case AST_ADDR_OF:   free(node->as.addr_of.var); break;
+        case AST_ADDR_OF:   ast_free(node->as.addr_of.target); break;
         case AST_TABLE_LIT: astlist_free(node->as.table.elements); break;
         case AST_PYRUNTIME_STMT: free(node->as.pyruntime.snippet); break;
         case AST_MALLOC_CALL: ast_free(node->as.malloc_call.size_expr); break;

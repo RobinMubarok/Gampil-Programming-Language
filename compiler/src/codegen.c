@@ -85,7 +85,7 @@ static GampilType infer_type(AstNode* n) {
 
 /* Generate C type for var_decl or param */
 static void emit_type_decl(CodegenCtx* ctx, GampilType t, int is_pointer,
-                            int array_size, const char* name, AstNode* decl_node) {
+                            int* array_sizes, int num_dims, const char* name, AstNode* decl_node) {
     if (t == GTYPE_DYNAMIC) t = GTYPE_NUM64; /* Treat dynamic as 64-bit int natively */
     if (t == GTYPE_REG) {
         emit(ctx, "register int %s __asm__(\"%s\")", name, (decl_node && decl_node->kind == AST_VAR_DECL && decl_node->as.var_decl.reg_name) ? decl_node->as.var_decl.reg_name : "eax");
@@ -104,7 +104,11 @@ static void emit_type_decl(CodegenCtx* ctx, GampilType t, int is_pointer,
                 if (elem->kind == AST_VAR_DECL) {
                     emit(ctx, "%s", gtype_to_c(elem->as.var_decl.type));
                     for (int p=0; p < elem->as.var_decl.is_pointer; p++) emit(ctx, "*");
-                    if (elem->as.var_decl.array_size > 0) emit(ctx, " %s[%d]; ", elem->as.var_decl.name, elem->as.var_decl.array_size);
+                    if (elem->as.var_decl.num_dims > 0) {
+                        emit(ctx, " %s", elem->as.var_decl.name);
+                        for(int d=0; d<elem->as.var_decl.num_dims; d++) emit(ctx, "[%d]", elem->as.var_decl.array_sizes[d]);
+                        emit(ctx, "; ");
+                    }
                     else emit(ctx, " %s; ", elem->as.var_decl.name);
                 } else {
                     GampilType inferred = infer_type(e->node);
@@ -119,7 +123,11 @@ static void emit_type_decl(CodegenCtx* ctx, GampilType t, int is_pointer,
                 AstNode* fn = f->node;
                 emit(ctx, "%s", gtype_to_c(fn->as.var_decl.type));
                 for (int p=0; p < fn->as.var_decl.is_pointer; p++) emit(ctx, "*");
-                if (fn->as.var_decl.array_size > 0) emit(ctx, " _%d[%d]; ", i, fn->as.var_decl.array_size);
+                if (fn->as.var_decl.num_dims > 0) {
+                    emit(ctx, " _%d", i);
+                    for(int d=0; d<fn->as.var_decl.num_dims; d++) emit(ctx, "[%d]", fn->as.var_decl.array_sizes[d]);
+                    emit(ctx, "; ");
+                }
                 else emit(ctx, " _%d; ", i);
             }
         } else {
@@ -127,15 +135,19 @@ static void emit_type_decl(CodegenCtx* ctx, GampilType t, int is_pointer,
         }
         emit(ctx, "}");
         for (int i = 0; i < is_pointer; i++) emit(ctx, "*");
-        if (array_size > 0) emit(ctx, " %s[%d]", name, array_size);
+        if (num_dims > 0) {
+            emit(ctx, " %s", name);
+            for(int d=0; d<num_dims; d++) emit(ctx, "[%d]", array_sizes[d]);
+        }
         else emit(ctx, " %s", name);
         return;
     }
     emit(ctx, "%s", gtype_to_c(t));
     for (int i = 0; i < is_pointer; i++) emit(ctx, "*");
     
-    if (array_size > 0) {
-        emit(ctx, " %s[%d]", name, array_size);
+    if (num_dims > 0) {
+        emit(ctx, " %s", name);
+        for(int d=0; d<num_dims; d++) emit(ctx, "[%d]", array_sizes[d]);
     } else {
         emit(ctx, " %s", name);
     }
@@ -282,8 +294,13 @@ static int expr_has_python_cast(CodegenCtx* ctx, AstNode* n) {
         case AST_PRINTN_CALL: {
             Symbol* s = NULL;
             if (n->kind == AST_CALL_EXPR && n->as.call.callee) {
-                s = sym_lookup(ctx->symtable, n->as.call.callee);
-                if (!s && !is_asm_instruction(n->as.call.callee)) return 1; /* implicit python call */
+                if (n->as.call.callee->kind == AST_IDENT) {
+                    char* cname = n->as.call.callee->as.ident.name;
+                    s = sym_lookup(ctx->symtable, cname);
+                    if (!s && !is_asm_instruction(cname)) return 1; /* implicit python call */
+                } else {
+                    return 0; /* Dynamic higher order call, not implicitly python */
+                }
             }
             for (AstList* arg = n->as.call.args; arg; arg = arg->next) {
                 if (expr_has_python_cast(ctx, arg->node)) return 1;
@@ -429,7 +446,8 @@ static void gen_expr(CodegenCtx* ctx, AstNode* n) {
             emit(ctx, "%s", n->as.ident.name);
             break;
         case AST_ADDR_OF:
-            emit(ctx, "&%s", n->as.addr_of.var);
+            emit(ctx, "&");
+            gen_expr(ctx, n->as.addr_of.target);
             break;
         case AST_UNARY_EXPR:
             switch (n->as.unary.op) {
@@ -501,40 +519,45 @@ static void gen_expr(CodegenCtx* ctx, AstNode* n) {
             break;
         case AST_CALL_EXPR: {
             Symbol* func_sym = NULL;
-            if (n->as.call.callee) {
-                func_sym = sym_lookup(ctx->symtable, n->as.call.callee);
+            int is_asm = 0;
+            char* cname = NULL;
+            
+            if (n->as.call.callee && n->as.call.callee->kind == AST_IDENT) {
+                cname = n->as.call.callee->as.ident.name;
+                func_sym = sym_lookup(ctx->symtable, cname);
+                is_asm = is_asm_instruction(cname);
             }
 
-            if (n->as.call.callee && !func_sym && !is_asm_instruction(n->as.call.callee)) {
+            if (!func_sym && !is_asm && cname) {
                 emit(ctx, "0"); /* implicit python call evaluated in bridge */
                 break;
             }
 
-            if (n->as.call.callee && !func_sym && is_asm_instruction(n->as.call.callee)) {
+            if (is_asm) {
                 int argc = 0;
                 for (AstList* a = n->as.call.args; a; a = a->next) argc++;
                 
                 if (argc == 0) {
-                    emit(ctx, "__asm__ (\"%s\")", n->as.call.callee);
+                    emit(ctx, "__asm__ (\"%s\")", cname);
                 } else if (argc == 1) {
-                    int is_write = (strcmp(n->as.call.callee, "pop") == 0 || strcmp(n->as.call.callee, "inc") == 0 || strcmp(n->as.call.callee, "dec") == 0);
+                    int is_write = (strcmp(cname, "pop") == 0 || strcmp(cname, "inc") == 0 || strcmp(cname, "dec") == 0);
                     if (is_write) {
-                        emit(ctx, "__asm__ (\"%s %%0\" : \"=g\"(", n->as.call.callee);
+                        emit(ctx, "__asm__ (\"%s %%0\" : \"=g\"(", cname);
                         gen_expr(ctx, n->as.call.args->node);
                         emit(ctx, "))");
                     } else {
-                        emit(ctx, "__asm__ (\"%s %%0\" : : \"g\"(", n->as.call.callee);
+                        emit(ctx, "__asm__ (\"%s %%0\" : : \"g\"(", cname);
                         gen_expr(ctx, n->as.call.args->node);
                         emit(ctx, "))");
                     }
                 } else if (argc == 2) {
-                    emit(ctx, "__asm__ (\"%s %%1, %%0\" : \"=g\"(", n->as.call.callee);
+                    emit(ctx, "__asm__ (\"%s %%1, %%0\" : \"=g\"(", cname);
                     gen_expr(ctx, n->as.call.args->node);
                     emit(ctx, ") : \"g\"(");
                     gen_expr(ctx, n->as.call.args->next->node);
                     emit(ctx, "))");
                 } else {
-                    emit(ctx, "__asm__ (\"%s", n->as.call.callee);
+                    emit(ctx, "__asm__ (\"%s", cname);
                     for (int i = 0; i < argc; i++) {
                         emit(ctx, " %%%d%c", i, (i == argc - 1) ? '"' : ',');
                     }
@@ -557,7 +580,14 @@ static void gen_expr(CodegenCtx* ctx, AstNode* n) {
                 break;
             }
 
-            emit(ctx, "%s(", n->as.call.callee ? n->as.call.callee : "unknown");
+            if (cname) {
+                emit(ctx, "%s(", cname);
+            } else {
+                emit(ctx, "(");
+                gen_expr(ctx, n->as.call.callee);
+                emit(ctx, ")(");
+            }
+
             AstList* expected_param = func_sym ? func_sym->func_params : NULL;
             AstList* provided_arg = n->as.call.args;
             
@@ -726,7 +756,13 @@ static void ast_to_python(AstNode* n, char* buf, size_t maxlen) {
             if (n->kind == AST_PRINTF_CALL) strncat(buf, "printf", maxlen);
             else if (n->kind == AST_PRINTN_CALL) strncat(buf, "printn", maxlen);
             else if (n->kind == AST_PRINT_CALL) strncat(buf, "print", maxlen);
-            else strncat(buf, n->as.call.callee ? n->as.call.callee : "unknown", maxlen);
+            else {
+                if (n->as.call.callee && n->as.call.callee->kind == AST_IDENT) {
+                    strncat(buf, n->as.call.callee->as.ident.name, maxlen);
+                } else {
+                    strncat(buf, "unknown", maxlen);
+                }
+            }
             
             strncat(buf, "(", maxlen);
             int first = 1;
@@ -734,8 +770,10 @@ static void ast_to_python(AstNode* n, char* buf, size_t maxlen) {
                 if (!first) strncat(buf, ", ", maxlen);
                 first = 0;
                 if (a->node->kind == AST_ASSIGN_STMT) {
-                    snprintf(tmp, sizeof(tmp), "%s=", a->node->as.assign.target);
-                    strncat(buf, tmp, maxlen);
+                    if (a->node->as.assign.target_expr->kind == AST_IDENT) {
+                        snprintf(tmp, sizeof(tmp), "%s=", a->node->as.assign.target_expr->as.ident.name);
+                        strncat(buf, tmp, maxlen);
+                    }
                     ast_to_python(a->node->as.assign.value, buf, maxlen);
                 } else {
                     ast_to_python(a->node, buf, maxlen);
@@ -813,41 +851,26 @@ static void gen_node(CodegenCtx* ctx, AstNode* n) {
 
             emit_indent(ctx);
             emit_type_decl(ctx, n->as.var_decl.type, n->as.var_decl.is_pointer,
-                           n->as.var_decl.array_size, n->as.var_decl.name, n);
+                           n->as.var_decl.array_sizes, n->as.var_decl.num_dims, n->as.var_decl.name, n);
             
             if (n->as.var_decl.initializer) {
                 emit(ctx, " = ");
                 gen_expr(ctx, n->as.var_decl.initializer);
-            } else if (n->as.var_decl.array_size > 0) {
+            } else if (n->as.var_decl.num_dims > 0) {
                 emit(ctx, " = {0}");
             }
             emit(ctx, ";\n");
             
             sym_declare(ctx->symtable, n->as.var_decl.name,
                         n->as.var_decl.type, n->as.var_decl.is_pointer,
-                        n->as.var_decl.array_size, 0);
+                        n->as.var_decl.array_sizes, n->as.var_decl.num_dims, 0);
             break;
         }
 
         /* ── Assignment ───────────────────────────────────── */
         case AST_ASSIGN_STMT: {
-            Symbol* target_sym = sym_lookup(ctx->symtable, n->as.assign.target);
-
             emit_indent(ctx);
-            if (n->as.assign.target_index) {
-                int is_field = 0;
-                if (target_sym && target_sym->type == GTYPE_FIELD) is_field = 1;
-                
-                if (is_field && n->as.assign.target_index->kind == AST_INT_LIT) {
-                    emit(ctx, "%s._%lld", n->as.assign.target, n->as.assign.target_index->as.int_lit.value);
-                } else {
-                    emit(ctx, "%s[", n->as.assign.target);
-                    gen_expr(ctx, n->as.assign.target_index);
-                    emit(ctx, "]");
-                }
-            } else {
-                emit(ctx, "%s", n->as.assign.target);
-            }
+            gen_expr(ctx, n->as.assign.target_expr);
             emit(ctx, " ");
             gen_compound_op(ctx, n->as.assign.op);
             emit(ctx, " ");
@@ -857,7 +880,8 @@ static void gen_node(CodegenCtx* ctx, AstNode* n) {
             /* Python bridge only for explicit Python casts in value */
             if (n->as.assign.value && expr_has_python_cast(ctx, n->as.assign.value)) {
                 char buf[4096] = {0};
-                snprintf(buf, sizeof(buf), "%s ", n->as.assign.target);
+                ast_to_python(n->as.assign.target_expr, buf, sizeof(buf)-1);
+                strncat(buf, " ", sizeof(buf)-1);
                 switch (n->as.assign.op) {
                     case TOK_PLUS_BE: strncat(buf, "+= ", sizeof(buf)-1); break;
                     case TOK_MINUS_BE: strncat(buf, "-= ", sizeof(buf)-1); break;
@@ -892,12 +916,12 @@ static void gen_node(CodegenCtx* ctx, AstNode* n) {
                     target->as.var_decl.initializer = val;
                     gen_node(ctx, target);
                     target->as.var_decl.initializer = NULL; /* Prevent double-free in ast_free */
-                } else if (target->kind == AST_IDENT) {
+                } else if (target->kind == AST_IDENT || target->kind == AST_INDEX_EXPR || target->kind == AST_FIELD_EXPR) {
                     AstNode assign = {0};
                     assign.kind = AST_ASSIGN_STMT;
                     assign.line = target->line;
                     assign.col = target->col;
-                    assign.as.assign.target = target->as.ident.name;
+                    assign.as.assign.target_expr = target;
                     assign.as.assign.op = TOK_BE;
                     assign.as.assign.value = val;
                     gen_node(ctx, &assign);
@@ -932,13 +956,13 @@ static void gen_node(CodegenCtx* ctx, AstNode* n) {
                 
                 if (target->kind == AST_VAR_DECL) {
                     emit_indent(ctx);
-                    emit_type_decl(ctx, target->as.var_decl.type, target->as.var_decl.is_pointer, target->as.var_decl.array_size, target->as.var_decl.name, target);
+                    emit_type_decl(ctx, target->as.var_decl.type, target->as.var_decl.is_pointer, target->as.var_decl.array_sizes, target->as.var_decl.num_dims, target->as.var_decl.name, target);
                     if (val_count > 0) {
                         emit(ctx, " = %s%s;\n", unique, tmp_name);
                     } else {
                         emit(ctx, ";\n");
                     }
-                    sym_declare(ctx->symtable, target->as.var_decl.name, target->as.var_decl.type, target->as.var_decl.is_pointer, target->as.var_decl.array_size, 0);
+                    sym_declare(ctx->symtable, target->as.var_decl.name, target->as.var_decl.type, target->as.var_decl.is_pointer, target->as.var_decl.array_sizes, target->as.var_decl.num_dims, 0);
                 } else if (target->kind == AST_IDENT) {
                     if (val_count > 0) {
                         emit_indent(ctx);
@@ -1040,7 +1064,7 @@ static void gen_node(CodegenCtx* ctx, AstNode* n) {
                 } else if (first_arr->kind == AST_IDENT) {
                     strncpy(first_arr_name, first_arr->as.ident.name, sizeof(first_arr_name)-1);
                     Symbol* s = sym_lookup(ctx->symtable, first_arr_name);
-                    if (s) first_arr_size = s->array_size;
+                    if (s && s->num_dims > 0) first_arr_size = s->array_sizes[0];
                 }
             }
             
@@ -1081,13 +1105,14 @@ static void gen_node(CodegenCtx* ctx, AstNode* n) {
                     
                     /* Declare local C variable for the dynamic iterator */
                     emit_indent(ctx);
-                    emit_type_decl(ctx, elem_type, 0, 0, iter_var->as.var_decl.name, iter_var);
+                    emit_type_decl(ctx, elem_type, 0, NULL, 0, iter_var->as.var_decl.name, iter_var);
                     emit(ctx, " = %s[%s];\n", arr_expr_str, idx_name);
                 } else {
                     emit_indent(ctx);
                     emit_type_decl(ctx, iter_var->as.var_decl.type,
                                    iter_var->as.var_decl.is_pointer,
-                                   iter_var->as.var_decl.array_size,
+                                   iter_var->as.var_decl.array_sizes,
+                                   iter_var->as.var_decl.num_dims,
                                    iter_var->as.var_decl.name, iter_var);
                     emit(ctx, " = %s[%s];\n", arr_expr_str, idx_name);
                 }
@@ -1163,7 +1188,7 @@ static void gen_node(CodegenCtx* ctx, AstNode* n) {
                 if (!first) emit(ctx, ", ");
                 first = 0;
                 emit_type_decl(ctx, pm->as.param.type,
-                               pm->as.param.is_pointer, 0,
+                               pm->as.param.is_pointer, NULL, 0,
                                pm->as.param.name, pm);
             }
             emit(ctx, ") {\n");
@@ -1173,7 +1198,7 @@ static void gen_node(CodegenCtx* ctx, AstNode* n) {
             for (AstList* pa = n->as.func_decl.params; pa; pa = pa->next) {
                 AstNode* pm = pa->node;
                 sym_declare(ctx->symtable, pm->as.param.name,
-                            pm->as.param.type, pm->as.param.is_pointer, 0, 0);
+                            pm->as.param.type, pm->as.param.is_pointer, NULL, 0, 0);
                 /* Suppress unused parameter warning */
                 emit_line(ctx, "(void)%s;", pm->as.param.name);
             }
@@ -1221,7 +1246,7 @@ static void emit_forward_decls(CodegenCtx* ctx, AstNode* program) {
             if (!first) emit(ctx, ", ");
             first = 0;
             emit_type_decl(ctx, pm->as.param.type,
-                           pm->as.param.is_pointer, 0,
+                           pm->as.param.is_pointer, NULL, 0,
                            pm->as.param.name, pm);
         }
         emit(ctx, ");\n");
@@ -1280,7 +1305,7 @@ int codegen_run(CodegenCtx* ctx, AstNode* program) {
             if (!first) emit(ctx, ", ");
             first = 0;
             emit_type_decl(ctx, pm->as.param.type,
-                           pm->as.param.is_pointer, 0,
+                           pm->as.param.is_pointer, NULL, 0,
                            pm->as.param.name, pm);
         }
         emit(ctx, ") {\n");

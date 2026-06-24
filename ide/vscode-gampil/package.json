@@ -1,0 +1,34 @@
+{
+  "name": "gampil",
+  "displayName": "Gampil Language",
+  "description": "Syntax highlighting and snippets for the Gampil programming language.",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "gampil",
+        "aliases": [
+          "Gampil",
+          "gampil"
+        ],
+        "extensions": [
+          ".ga"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "gampil",
+        "scopeName": "source.gampil",
+        "path": "./syntaxes/gampil.tmLanguage.json"
+      }
+    ]
+  }
+}

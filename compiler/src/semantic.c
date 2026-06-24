@@ -145,13 +145,18 @@ static GampilType analyze_expr(SemanticCtx* ctx, AstNode* n) {
         case AST_PRINTN_CALL:
         case AST_PRINT_CALL: {
             GampilType ret = GTYPE_VOID;
-            if (n->as.call.callee && n->kind == AST_CALL_EXPR) {
-                Symbol* s = sym_lookup(ctx->symtable, n->as.call.callee);
-                if (!s && !is_asm_instruction(n->as.call.callee)) {
-                    /* It's implicitly treated as Python function call */
-                    ret = GTYPE_DYNAMIC;
-                } else if (s) {
-                    ret = s->func_ret_type;
+            if (n->as.call.callee) {
+                if (n->as.call.callee->kind == AST_IDENT) {
+                    char* cname = n->as.call.callee->as.ident.name;
+                    Symbol* s = sym_lookup(ctx->symtable, cname);
+                    if (!s && !is_asm_instruction(cname)) {
+                        ret = GTYPE_DYNAMIC;
+                    } else if (s) {
+                        ret = s->func_ret_type;
+                    }
+                } else {
+                    analyze_expr(ctx, n->as.call.callee);
+                    ret = GTYPE_DYNAMIC; /* Higher-order call returns dynamic for now */
                 }
             }
             for (AstList* a = n->as.call.args; a; a = a->next)
@@ -165,14 +170,10 @@ static GampilType analyze_expr(SemanticCtx* ctx, AstNode* n) {
             analyze_expr(ctx, n->as.py_cast.expr);
             return GTYPE_DYNAMIC;
         case AST_ADDR_OF: {
-            Symbol* s = sym_lookup(ctx->symtable, n->as.addr_of.var);
-            if (!s) {
-                char msg[256];
-                snprintf(msg, sizeof(msg), "undefined variable '%s' in address-of", n->as.addr_of.var);
-                sem_error(ctx, n, msg);
-                return GTYPE_UNKNOWN;
-            }
-            return s->type;
+            GampilType tgt = analyze_expr(ctx, n->as.addr_of.target);
+            /* Addr of should return a pointer type of the target, currently we don't have strict pointer types 
+               in analyze_expr return so we just return the base type */
+            return tgt;
         }
         case AST_TABLE_LIT:
             for (AstList* e = n->as.table.elements; e; e = e->next)
@@ -199,7 +200,7 @@ static void analyze_node(SemanticCtx* ctx, AstNode* n) {
             for (AstList* pa = n->as.func_decl.params; pa; pa = pa->next) {
                 AstNode* pm = pa->node;
                 sym_declare(ctx->symtable, pm->as.param.name, pm->as.param.type,
-                            pm->as.param.is_pointer, 0, gtype_is_dynamic(pm->as.param.type));
+                            pm->as.param.is_pointer, NULL, 0, gtype_is_dynamic(pm->as.param.type));
                 Symbol* s = sym_lookup(ctx->symtable, pm->as.param.name);
                 if (s) s->is_initialized = 1;
             }
@@ -211,12 +212,12 @@ static void analyze_node(SemanticCtx* ctx, AstNode* n) {
         case AST_VAR_DECL: {
             if (n->as.var_decl.type == GTYPE_DYNAMIC) {
                 /* Let variable — mark dynamic, no static type check */
-                sym_declare(ctx->symtable, n->as.var_decl.name, GTYPE_DYNAMIC, 0, 0, 1);
+                sym_declare(ctx->symtable, n->as.var_decl.name, GTYPE_DYNAMIC, 0, NULL, 0, 1);
             } else {
                 int r = sym_declare(ctx->symtable, n->as.var_decl.name,
                                     n->as.var_decl.type,
                                     n->as.var_decl.is_pointer,
-                                    n->as.var_decl.array_size, 0);
+                                    n->as.var_decl.array_sizes, n->as.var_decl.num_dims, 0);
                 if (r < 0) {
                     char msg[256];
                     snprintf(msg, sizeof(msg), "redeclaration of '%s'", n->as.var_decl.name);
@@ -232,31 +233,38 @@ static void analyze_node(SemanticCtx* ctx, AstNode* n) {
                 }
                 Symbol* s = sym_lookup(ctx->symtable, n->as.var_decl.name);
                 if (s) s->is_initialized = 1;
-            } else if (n->as.var_decl.array_size > 0 || n->as.var_decl.type == GTYPE_FIELD) {
+            } else if (n->as.var_decl.num_dims > 0 || n->as.var_decl.type == GTYPE_FIELD) {
                 Symbol* s = sym_lookup(ctx->symtable, n->as.var_decl.name);
                 if (s) s->is_initialized = 1;
             }
             break;
         }
         case AST_ASSIGN_STMT: {
-            /* For dotted targets (obj.field), just check the base name */
-            char base[256]; strncpy(base, n->as.assign.target, sizeof(base)-1);
-            char* dot = strchr(base, '.'); if (dot) *dot = '\0';
-            Symbol* s = sym_lookup(ctx->symtable, base);
-            if (!s) {
-                char msg[256];
-                snprintf(msg, sizeof(msg), "assignment to undeclared '%s'", n->as.assign.target);
-                sem_error(ctx, n, msg);
-            } else {
-                s->is_initialized = 1;
-            }
+            GampilType target_type = analyze_expr(ctx, n->as.assign.target_expr);
             GampilType val_type = analyze_expr(ctx, n->as.assign.value);
-            if (s && s->type != GTYPE_DYNAMIC && val_type != GTYPE_DYNAMIC && s->type != val_type && val_type != GTYPE_UNKNOWN && s->type != GTYPE_FIELD && !(is_numeric_type(s->type) && is_numeric_type(val_type))) {
+
+            /* Check if target_expr is a valid l-value */
+            int is_lvalue = 0;
+            AstNode* t = n->as.assign.target_expr;
+            if (t->kind == AST_IDENT) is_lvalue = 1;
+            else if (t->kind == AST_INDEX_EXPR) is_lvalue = 1;
+            else if (t->kind == AST_FIELD_EXPR) is_lvalue = 1;
+            else if (t->kind == AST_CALL_EXPR) is_lvalue = 1; /* In C, macros or returning pointers could act as l-values, we'll allow for flexibility */
+
+            if (!is_lvalue) {
+                sem_error(ctx, n, "invalid left value in assignment");
+            }
+
+            if (t->kind == AST_IDENT) {
+                Symbol* s = sym_lookup(ctx->symtable, t->as.ident.name);
+                if (s) s->is_initialized = 1;
+            }
+
+            if (target_type != GTYPE_DYNAMIC && val_type != GTYPE_DYNAMIC && target_type != val_type && val_type != GTYPE_UNKNOWN && target_type != GTYPE_FIELD && !(is_numeric_type(target_type) && is_numeric_type(val_type))) {
                 char msg[256];
-                snprintf(msg, sizeof(msg), "type mismatch in assignment to '%s': expected %s, got %s", n->as.assign.target, gtype_name(s->type), gtype_name(val_type));
+                snprintf(msg, sizeof(msg), "type mismatch in assignment: expected %s, got %s", gtype_name(target_type), gtype_name(val_type));
                 sem_error(ctx, n, msg);
             }
-            analyze_expr(ctx, n->as.assign.target_index);
             break;
         }
         case AST_MULTI_ASSIGN: {
@@ -299,7 +307,8 @@ static void analyze_node(SemanticCtx* ctx, AstNode* n) {
                 AstNode* iter_node = it->node;
                 sym_declare(ctx->symtable, iter_node->as.var_decl.name,
                             iter_node->as.var_decl.type,
-                            iter_node->as.var_decl.is_pointer, 0,
+                            iter_node->as.var_decl.is_pointer,
+                            iter_node->as.var_decl.array_sizes, iter_node->as.var_decl.num_dims,
                             gtype_is_dynamic(iter_node->as.var_decl.type));
                 Symbol* s = sym_lookup(ctx->symtable, iter_node->as.var_decl.name);
                 if (s) s->is_initialized = 1;

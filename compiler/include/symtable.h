@@ -15,7 +15,8 @@ typedef struct Symbol {
     char*       name;
     GampilType  type;
     int         is_pointer;
-    int         array_size;   /* 0 = scalar, >0 = static array    */
+    int         array_sizes[4];
+    int         num_dims;
     int         is_function;
     GampilType  func_ret_type;
     AstList*    func_params;  /* list of AST_PARAM nodes          */
@@ -40,8 +41,8 @@ void      sym_push_scope(SymTable* st);
 void      sym_pop_scope(SymTable* st);
 
 /* Returns 0 on success, -1 if already declared in current scope */
-int       sym_declare(SymTable* st, const char* name, GampilType type,
-                      int is_pointer, int array_size, int is_dynamic);
+int sym_declare(SymTable* table, const char* name, GampilType type,
+                      int is_pointer, int* array_sizes, int num_dims, int is_dynamic);
 
 /* Declare a function symbol */
 int       sym_declare_func(SymTable* st, const char* name,

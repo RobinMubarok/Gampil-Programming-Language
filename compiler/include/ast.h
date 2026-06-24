@@ -123,7 +123,8 @@ struct AstNode {
             GampilType type;
             char*      name;
             int        is_pointer;   /* num32() → pointer   */
-            int        array_size;   /* num16(3) → 3; 0=dynamic */
+            int        array_sizes[4];
+            int        num_dims;
             AstNode*   initializer;  /* NULL if uninitialized   */
             AstList*   field_params; /* for field({types}) var  */
             char*      reg_name;     /* Register name (e.g. eax) */
@@ -156,10 +157,9 @@ struct AstNode {
 
         /* AST_ASSIGN_STMT */
         struct {
-            char*      target;     /* variable name                */
+            AstNode*   target_expr; /* variable or access expression */
             TokenType  op;         /* TOK_BE, TOK_PLUS_BE, etc.   */
             AstNode*   value;
-            AstNode*   target_index; /* for array assign: arr(i)  */
         } assign;
 
         /* AST_MULTI_ASSIGN */
@@ -186,7 +186,7 @@ struct AstNode {
 
         /* AST_CALL_EXPR / AST_PRINTF_CALL / AST_PRINTN_CALL / etc. */
         struct {
-            char*    callee;
+            AstNode* callee;
             AstList* args;     /* each arg is an AstNode* (expr or assign) */
         } call;
 
@@ -229,7 +229,7 @@ struct AstNode {
         struct { AstList* elements; } table;
 
         /* AST_ADDR_OF */
-        struct { char* var; } addr_of;
+        struct { AstNode* target; } addr_of;
 
         /* AST_PYRUNTIME_STMT: raw source snippet to delegate */
         struct { char* snippet; } pyruntime;

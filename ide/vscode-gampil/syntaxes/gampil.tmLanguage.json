@@ -1,0 +1,179 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Gampil",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "#functions" },
+    { "include": "#variables" },
+    { "include": "#numbers" },
+    { "include": "#registers" },
+    { "include": "#operators" },
+    { "include": "#brackets" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "match": "\\\\.*$",
+          "name": "comment.line.backslash.gampil"
+        },
+        {
+          "begin": "`",
+          "end": "`",
+          "name": "comment.block.gampil"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "begin": "(f|F)?\"\"\"",
+          "beginCaptures": { "1": { "name": "storage.type.string.gampil" } },
+          "end": "\"\"\"",
+          "name": "string.quoted.triple.double.gampil",
+          "patterns": [
+            { "match": "\\\\.", "name": "constant.character.escape.gampil" },
+            {
+              "begin": "\\{",
+              "beginCaptures": { "0": { "name": "punctuation.section.embedded.begin.gampil" } },
+              "end": "\\}",
+              "endCaptures": { "0": { "name": "punctuation.section.embedded.end.gampil" } },
+              "name": "meta.embedded.line.gampil",
+              "patterns": [ { "include": "$self" } ]
+            }
+          ]
+        },
+        {
+          "begin": "(f|F)?'''",
+          "beginCaptures": { "1": { "name": "storage.type.string.gampil" } },
+          "end": "'''",
+          "name": "string.quoted.triple.single.gampil",
+          "patterns": [
+            { "match": "\\\\.", "name": "constant.character.escape.gampil" },
+            {
+              "begin": "\\{",
+              "beginCaptures": { "0": { "name": "punctuation.section.embedded.begin.gampil" } },
+              "end": "\\}",
+              "endCaptures": { "0": { "name": "punctuation.section.embedded.end.gampil" } },
+              "name": "meta.embedded.line.gampil",
+              "patterns": [ { "include": "$self" } ]
+            }
+          ]
+        },
+        {
+          "begin": "(f|F)?\"",
+          "beginCaptures": { "1": { "name": "storage.type.string.gampil" } },
+          "end": "\"",
+          "name": "string.quoted.double.gampil",
+          "patterns": [
+            { "match": "\\\\.", "name": "constant.character.escape.gampil" },
+            {
+              "begin": "\\{",
+              "beginCaptures": { "0": { "name": "punctuation.section.embedded.begin.gampil" } },
+              "end": "\\}",
+              "endCaptures": { "0": { "name": "punctuation.section.embedded.end.gampil" } },
+              "name": "meta.embedded.line.gampil",
+              "patterns": [ { "include": "$self" } ]
+            }
+          ]
+        },
+        {
+          "begin": "(f|F)?'",
+          "beginCaptures": { "1": { "name": "storage.type.string.gampil" } },
+          "end": "'",
+          "name": "string.quoted.single.gampil",
+          "patterns": [
+            { "match": "\\\\.", "name": "constant.character.escape.gampil" },
+            {
+              "begin": "\\{",
+              "beginCaptures": { "0": { "name": "punctuation.section.embedded.begin.gampil" } },
+              "end": "\\}",
+              "endCaptures": { "0": { "name": "punctuation.section.embedded.end.gampil" } },
+              "name": "meta.embedded.line.gampil",
+              "patterns": [ { "include": "$self" } ]
+            }
+          ]
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "match": "\\b(let|be|if|but|butif|else|redo|while|as|quite|return|stop|field|algo|ok)\\b",
+          "name": "keyword.control.gampil"
+        },
+        {
+          "match": "\\b(true|false|nil)\\b",
+          "name": "constant.language.gampil"
+        },
+        {
+          "match": "\\b(printf|printn|print|malloc|free)\\b",
+          "name": "support.function.gampil"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "match": "\\b(z)?(num8|num16|num32|num64|rat32|rat64|rat128|asc8|asc16|asc32|bitOff|bitOn|cmp64|cmp128|logic|any|struct)\\b",
+          "name": "entity.name.type.gampil"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?=\\[)",
+          "name": "entity.name.function.gampil"
+        }
+      ]
+    },
+    "variables": {
+      "patterns": [
+        {
+          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\b",
+          "name": "variable.other.readwrite.gampil"
+        }
+      ]
+    },
+    "registers": {
+      "patterns": [
+        {
+          "match": "\\b(eax|ebx|ecx|edx|esi|edi|esp|ebp|rax|rbx|rcx|rdx|rsi|rdi|rsp|rbp|r8|r9|r10|r11|r12|r13|r14|r15)\\b",
+          "name": "variable.language.register.gampil"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        { "match": "\\b0[xX][0-9a-fA-F_]+\\b", "name": "constant.numeric.hex.gampil" },
+        { "match": "\\b0[bB][01_]+\\b", "name": "constant.numeric.binary.gampil" },
+        { "match": "\\b0[oO][0-7_]+\\b", "name": "constant.numeric.octal.gampil" },
+        { "match": "\\b\\d[\\d_]*(\\.[\\d_]+)?([eE][+-]?[\\d_]+)?(j|J)?\\b", "name": "constant.numeric.gampil" }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "match": "(\\+|-|\\*|/|%|\\^|&|\\||<<|>>)=?",
+          "name": "keyword.operator.gampil"
+        },
+        {
+          "match": "(@|=|!|<|>|<=|>=|~)",
+          "name": "keyword.operator.gampil"
+        }
+      ]
+    },
+    "brackets": {
+      "patterns": [
+        { "match": "\\[|\\]", "name": "meta.brace.square.gampil" },
+        { "match": "\\(|\\)", "name": "meta.brace.round.gampil" },
+        { "match": "\\{|\\}", "name": "meta.brace.curly.gampil" }
+      ]
+    }
+  },
+  "scopeName": "source.gampil"
+}

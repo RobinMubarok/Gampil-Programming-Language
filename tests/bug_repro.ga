@@ -1,0 +1,4 @@
+bitOff algo[asc8()() args]:
+    num8(2)(2) c be {{1,2}, {3,4}}
+    printf ["%d", c(0)(0)]
+    ok

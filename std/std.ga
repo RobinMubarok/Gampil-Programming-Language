@@ -1,0 +1,48 @@
+` 
+  Gampil Standard Library
+  -----------------------
+  Contains mathematical and array manipulation wrappers.
+  Uses Python's backend via `z`-prefix casting.
+`
+
+bitOff algo[asc8()() args]:
+    printf ["Gampil Standard Library Loaded\n"]
+ok
+
+` --- Math --- `
+rat64 pow[rat64 base, rat64 exp]:
+    rat64 res be zrat64[pow(rat64[base], rat64[exp])]
+    return res
+ok
+
+rat64 sqrt[rat64 val]:
+    rat64 res be zrat64[pow(rat64[val], rat64[0.5])]
+    return res
+ok
+
+num64 abs[num64 val]:
+    num64 res be znum64[abs(num64[val])]
+    return res
+ok
+
+num64 max[num64 a, num64 b]:
+    num64 res be znum64[max(num64[a], num64[b])]
+    return res
+ok
+
+num64 min[num64 a, num64 b]:
+    num64 res be znum64[min(num64[a], num64[b])]
+    return res
+ok
+
+` --- String --- `
+num64 strlen[asc8() str]:
+    num64 res be znum64[len(asc8()[str])]
+    return res
+ok
+
+` --- Array Operations --- `
+num64 len[any arr]:
+    num64 res be znum64[len(any[arr])]
+    return res
+ok

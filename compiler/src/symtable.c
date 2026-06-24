@@ -53,7 +53,7 @@ void symtable_free(SymTable* st) {
 }
 
 int sym_declare(SymTable* st, const char* name, GampilType type,
-                int is_pointer, int array_size, int is_dynamic) {
+                int is_pointer, int* array_sizes, int num_dims, int is_dynamic) {
     SymScope* scope = st->scopes[st->depth];
     unsigned int h  = hash_str(name);
     /* Check redeclaration in current scope */
@@ -63,7 +63,12 @@ int sym_declare(SymTable* st, const char* name, GampilType type,
     sym->name       = strdup(name);
     sym->type       = type;
     sym->is_pointer = is_pointer;
-    sym->array_size = array_size;
+    sym->num_dims   = num_dims;
+    if (array_sizes && num_dims > 0) {
+        for (int i = 0; i < num_dims && i < 4; i++) {
+            sym->array_sizes[i] = array_sizes[i];
+        }
+    }
     sym->is_dynamic = is_dynamic;
     sym->next       = scope->buckets[h];
     scope->buckets[h] = sym;

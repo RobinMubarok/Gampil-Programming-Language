@@ -1,0 +1,5 @@
+bitOff algo[]:
+    num8 a be 100
+    num8() b be @a
+    num8()() c be @b
+    ok
