@@ -6,7 +6,7 @@
 #include <complex.h>
 
 /* --- Forward Declarations --- */
-void _gampil_main(unsigned char** args);
+void _gampil_algo(unsigned char** args);
 short add(short a, short b);
 void greet();
 
@@ -21,7 +21,7 @@ void greet() {
     printf("Greetings!");
 }
 
-void _gampil_main(unsigned char** args) {
+void _gampil_algo(unsigned char** args) {
     (void)args;
     printf("Hello World!");
     float y = 0.5;
@@ -95,6 +95,6 @@ void _gampil_main(unsigned char** args) {
 
 int main(int argc, char** argv) {
     (void)argc;
-    _gampil_main((unsigned char**)argv);
+    _gampil_algo((unsigned char**)argv);
     return 0;
 }

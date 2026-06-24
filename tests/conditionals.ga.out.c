@@ -6,10 +6,10 @@
 #include <complex.h>
 
 /* --- Forward Declarations --- */
-void _gampil_main();
+void _gampil_algo();
 
 
-void _gampil_main() {
+void _gampil_algo() {
     long x = 10;
     /* --- Parallel Guard Block --- */
     {
@@ -63,6 +63,6 @@ void _gampil_main() {
 
 int main(int argc, char** argv) {
     (void)argc;
-    _gampil_main((unsigned char**)argv);
+    _gampil_algo((unsigned char**)argv);
     return 0;
 }

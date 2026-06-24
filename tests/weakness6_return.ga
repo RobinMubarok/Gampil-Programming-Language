@@ -1,0 +1,8 @@
+num16 testFunc[]:
+    return "string"
+ok
+
+bitOff algo[]:
+    num16 a be testFunc[]
+    printf ["%d\n", a]
+ok

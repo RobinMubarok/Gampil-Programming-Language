@@ -20,6 +20,7 @@ typedef struct Symbol {
     GampilType  func_ret_type;
     AstList*    func_params;  /* list of AST_PARAM nodes          */
     int         is_dynamic;   /* 1 = `let` type → Python runtime  */
+    int         is_initialized; /* 1 = initialized, 0 = uninitialized */
     struct Symbol* next;      /* chaining in hash bucket          */
 } Symbol;
 

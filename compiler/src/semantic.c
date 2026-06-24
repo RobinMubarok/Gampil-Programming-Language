@@ -66,6 +66,18 @@ static void sem_error(SemanticCtx* ctx, AstNode* n, const char* msg) {
     }
 }
 
+static int is_numeric_type(GampilType t) {
+    switch (t) {
+        case GTYPE_NUM8: case GTYPE_NUM16: case GTYPE_NUM32: case GTYPE_NUM64:
+        case GTYPE_ASC8: case GTYPE_ASC16: case GTYPE_ASC32: case GTYPE_ASC64:
+        case GTYPE_RAT32: case GTYPE_RAT64: case GTYPE_RAT128:
+        case GTYPE_BITON: case GTYPE_BITOFF:
+            return 1;
+        default: return 0;
+    }
+}
+
+static GampilType analyze_expr(SemanticCtx* ctx, AstNode* n);
 static void analyze_node(SemanticCtx* ctx, AstNode* n);
 static void analyze_block(SemanticCtx* ctx, AstNode* block);
 
@@ -81,8 +93,8 @@ static int is_asm_instruction(const char* name) {
     return 0;
 }
 
-static void analyze_expr(SemanticCtx* ctx, AstNode* n) {
-    if (!n) return;
+static GampilType analyze_expr(SemanticCtx* ctx, AstNode* n) {
+    if (!n) return GTYPE_VOID;
     switch (n->kind) {
         case AST_IDENT: {
             Symbol* s = sym_lookup(ctx->symtable, n->as.ident.name);
@@ -90,56 +102,86 @@ static void analyze_expr(SemanticCtx* ctx, AstNode* n) {
                 char msg[256];
                 snprintf(msg, sizeof(msg), "undefined variable '%s'", n->as.ident.name);
                 sem_error(ctx, n, msg);
+                return GTYPE_UNKNOWN;
             }
-            break;
+            if (!s->is_initialized && !s->is_function) {
+                char msg[256];
+                snprintf(msg, sizeof(msg), "use of uninitialized variable '%s'", n->as.ident.name);
+                sem_error(ctx, n, msg);
+            }
+            return s->type;
         }
-        case AST_BINARY_EXPR:
-            analyze_expr(ctx, n->as.binary.left);
-            analyze_expr(ctx, n->as.binary.right);
-            break;
+        case AST_INT_LIT:
+            if (n->as.int_lit.value >= -2147483648LL && n->as.int_lit.value <= 2147483647LL)
+                return GTYPE_NUM32;
+            return GTYPE_NUM64;
+        case AST_FLOAT_LIT: return GTYPE_RAT64;
+        case AST_COMPLEX_LIT: return GTYPE_UNKNOWN;
+        case AST_STR_LIT: return GTYPE_ASC8;
+        case AST_BOOL_LIT: return GTYPE_BITON;
+        case AST_NIL_LIT: return GTYPE_VOID;
+        case AST_ELSE_EXPR: return GTYPE_BITON;
+        case AST_BINARY_EXPR: {
+            GampilType lt = analyze_expr(ctx, n->as.binary.left);
+            GampilType rt = analyze_expr(ctx, n->as.binary.right);
+            if (lt != rt && lt != GTYPE_DYNAMIC && rt != GTYPE_DYNAMIC && !(is_numeric_type(lt) && is_numeric_type(rt))) {
+                char msg[256];
+                snprintf(msg, sizeof(msg), "type mismatch in binary expression: %s and %s", gtype_name(lt), gtype_name(rt));
+                sem_error(ctx, n, msg);
+            }
+            return lt;
+        }
         case AST_UNARY_EXPR:
-            analyze_expr(ctx, n->as.unary.operand);
-            break;
+            return analyze_expr(ctx, n->as.unary.operand);
         case AST_INDEX_EXPR:
             analyze_expr(ctx, n->as.index.array);
             analyze_expr(ctx, n->as.index.index);
-            break;
+            return GTYPE_DYNAMIC; /* simplification */
         case AST_FIELD_EXPR:
             analyze_expr(ctx, n->as.field_access.object);
-            break;
+            return GTYPE_DYNAMIC;
         case AST_CALL_EXPR:
         case AST_PRINTF_CALL:
         case AST_PRINTN_CALL:
         case AST_PRINT_CALL: {
+            GampilType ret = GTYPE_VOID;
             if (n->as.call.callee && n->kind == AST_CALL_EXPR) {
                 Symbol* s = sym_lookup(ctx->symtable, n->as.call.callee);
                 if (!s && !is_asm_instruction(n->as.call.callee)) {
-                    char msg[256];
-                    snprintf(msg, sizeof(msg), "undefined function '%s'", n->as.call.callee);
-                    sem_error(ctx, n, msg);
+                    /* It's implicitly treated as Python function call */
+                    ret = GTYPE_DYNAMIC;
+                } else if (s) {
+                    ret = s->func_ret_type;
                 }
             }
             for (AstList* a = n->as.call.args; a; a = a->next)
                 analyze_expr(ctx, a->node);
-            break;
+            return ret;
         }
+        case AST_GACAST_EXPR:
+            analyze_expr(ctx, n->as.py_cast.expr);
+            return n->as.py_cast.target_type;
+        case AST_PYCAST_EXPR:
+            analyze_expr(ctx, n->as.py_cast.expr);
+            return GTYPE_DYNAMIC;
         case AST_ADDR_OF: {
             Symbol* s = sym_lookup(ctx->symtable, n->as.addr_of.var);
             if (!s) {
                 char msg[256];
                 snprintf(msg, sizeof(msg), "undefined variable '%s' in address-of", n->as.addr_of.var);
                 sem_error(ctx, n, msg);
+                return GTYPE_UNKNOWN;
             }
-            break;
+            return s->type;
         }
         case AST_TABLE_LIT:
             for (AstList* e = n->as.table.elements; e; e = e->next)
                 analyze_node(ctx, e->node);
-            break;
+            return GTYPE_FIELD;
         case AST_MALLOC_CALL:
             analyze_expr(ctx, n->as.malloc_call.size_expr);
-            break;
-        default: break;
+            return GTYPE_VOID;
+        default: return GTYPE_UNKNOWN;
     }
 }
 
@@ -158,6 +200,8 @@ static void analyze_node(SemanticCtx* ctx, AstNode* n) {
                 AstNode* pm = pa->node;
                 sym_declare(ctx->symtable, pm->as.param.name, pm->as.param.type,
                             pm->as.param.is_pointer, 0, gtype_is_dynamic(pm->as.param.type));
+                Symbol* s = sym_lookup(ctx->symtable, pm->as.param.name);
+                if (s) s->is_initialized = 1;
             }
             analyze_block(ctx, n->as.func_decl.body);
             ctx->current_ret = prev_ret;
@@ -179,8 +223,19 @@ static void analyze_node(SemanticCtx* ctx, AstNode* n) {
                     sem_error(ctx, n, msg);
                 }
             }
-            if (n->as.var_decl.initializer)
-                analyze_expr(ctx, n->as.var_decl.initializer);
+            if (n->as.var_decl.initializer) {
+                GampilType init_type = analyze_expr(ctx, n->as.var_decl.initializer);
+                if (n->as.var_decl.type != GTYPE_DYNAMIC && init_type != GTYPE_DYNAMIC && n->as.var_decl.type != init_type && init_type != GTYPE_UNKNOWN && n->as.var_decl.type != GTYPE_FIELD && !(is_numeric_type(n->as.var_decl.type) && is_numeric_type(init_type))) {
+                    char msg[256];
+                    snprintf(msg, sizeof(msg), "type mismatch in initialization of '%s': expected %s, got %s", n->as.var_decl.name, gtype_name(n->as.var_decl.type), gtype_name(init_type));
+                    sem_error(ctx, n, msg);
+                }
+                Symbol* s = sym_lookup(ctx->symtable, n->as.var_decl.name);
+                if (s) s->is_initialized = 1;
+            } else if (n->as.var_decl.array_size > 0 || n->as.var_decl.type == GTYPE_FIELD) {
+                Symbol* s = sym_lookup(ctx->symtable, n->as.var_decl.name);
+                if (s) s->is_initialized = 1;
+            }
             break;
         }
         case AST_ASSIGN_STMT: {
@@ -192,8 +247,15 @@ static void analyze_node(SemanticCtx* ctx, AstNode* n) {
                 char msg[256];
                 snprintf(msg, sizeof(msg), "assignment to undeclared '%s'", n->as.assign.target);
                 sem_error(ctx, n, msg);
+            } else {
+                s->is_initialized = 1;
             }
-            analyze_expr(ctx, n->as.assign.value);
+            GampilType val_type = analyze_expr(ctx, n->as.assign.value);
+            if (s && s->type != GTYPE_DYNAMIC && val_type != GTYPE_DYNAMIC && s->type != val_type && val_type != GTYPE_UNKNOWN && s->type != GTYPE_FIELD && !(is_numeric_type(s->type) && is_numeric_type(val_type))) {
+                char msg[256];
+                snprintf(msg, sizeof(msg), "type mismatch in assignment to '%s': expected %s, got %s", n->as.assign.target, gtype_name(s->type), gtype_name(val_type));
+                sem_error(ctx, n, msg);
+            }
             analyze_expr(ctx, n->as.assign.target_index);
             break;
         }
@@ -205,12 +267,16 @@ static void analyze_node(SemanticCtx* ctx, AstNode* n) {
                 AstNode* target = t->node;
                 if (target->kind == AST_VAR_DECL) {
                     analyze_node(ctx, target);
+                    Symbol* s = sym_lookup(ctx->symtable, target->as.var_decl.name);
+                    if (s) s->is_initialized = 1;
                 } else if (target->kind == AST_IDENT) {
                     Symbol* s = sym_lookup(ctx->symtable, target->as.ident.name);
                     if (!s) {
                         char msg[256];
                         snprintf(msg, sizeof(msg), "undefined variable '%s'", target->as.ident.name);
                         sem_error(ctx, n, msg);
+                    } else {
+                        s->is_initialized = 1;
                     }
                 }
             }
@@ -235,6 +301,8 @@ static void analyze_node(SemanticCtx* ctx, AstNode* n) {
                             iter_node->as.var_decl.type,
                             iter_node->as.var_decl.is_pointer, 0,
                             gtype_is_dynamic(iter_node->as.var_decl.type));
+                Symbol* s = sym_lookup(ctx->symtable, iter_node->as.var_decl.name);
+                if (s) s->is_initialized = 1;
             }
             analyze_block(ctx, n->as.redo_loop.body);
             sym_pop_scope(ctx->symtable);
@@ -245,9 +313,15 @@ static void analyze_node(SemanticCtx* ctx, AstNode* n) {
             if (ctx->in_loop == 0)
                 sem_error(ctx, n, "'stop' used outside of loop");
             break;
-        case AST_RETURN_STMT:
-            analyze_expr(ctx, n->as.ret.value);
+        case AST_RETURN_STMT: {
+            GampilType ret = analyze_expr(ctx, n->as.ret.value);
+            if (ctx->current_ret != GTYPE_DYNAMIC && ret != GTYPE_DYNAMIC && ctx->current_ret != ret && ret != GTYPE_UNKNOWN && ctx->current_ret != GTYPE_VOID && !(is_numeric_type(ctx->current_ret) && is_numeric_type(ret))) {
+                char msg[256];
+                snprintf(msg, sizeof(msg), "type mismatch in return: expected %s, got %s", gtype_name(ctx->current_ret), gtype_name(ret));
+                sem_error(ctx, n, msg);
+            }
             break;
+        }
         case AST_EXPR_STMT:
             analyze_expr(ctx, n->as.expr_stmt.expr);
             break;
@@ -278,5 +352,13 @@ int semantic_analyze(SemanticCtx* ctx, AstNode* program) {
     /* Second pass: full analysis */
     for (AstList* d = program->as.program.decls; d; d = d->next)
         analyze_node(ctx, d->node);
+        
+    /* Enforce entry function */
+    Symbol* algo_sym = sym_lookup(ctx->symtable, "algo");
+    if (!algo_sym || !algo_sym->is_function) {
+        fprintf(stderr, "Error: missing entry function 'algo'\n");
+        ctx->had_error = 1;
+    }
+    
     return ctx->had_error ? -1 : 0;
 }

@@ -1,0 +1,6 @@
+bitOff algo[]:
+    num16 a be 10
+    redo a as let i:
+        printf ["%d\n", i]
+    ok
+ok

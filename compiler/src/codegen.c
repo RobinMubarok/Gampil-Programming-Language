@@ -267,6 +267,10 @@ static int expr_has_python_cast(CodegenCtx* ctx, AstNode* n) {
             /* Recurse into sub-expressions */
             return expr_has_python_cast(ctx, n->as.index.array)
                 || expr_has_python_cast(ctx, n->as.index.index);
+        case AST_GACAST_EXPR:
+            return 1; /* Trigger bridge to read back python value to gampil type */
+        case AST_PYCAST_EXPR:
+            return 1;
         case AST_UNARY_EXPR:
             return expr_has_python_cast(ctx, n->as.unary.operand);
         case AST_BINARY_EXPR:
@@ -275,11 +279,17 @@ static int expr_has_python_cast(CodegenCtx* ctx, AstNode* n) {
         case AST_CALL_EXPR:
         case AST_PRINTF_CALL:
         case AST_PRINT_CALL:
-        case AST_PRINTN_CALL:
+        case AST_PRINTN_CALL: {
+            Symbol* s = NULL;
+            if (n->kind == AST_CALL_EXPR && n->as.call.callee) {
+                s = sym_lookup(ctx->symtable, n->as.call.callee);
+                if (!s && !is_asm_instruction(n->as.call.callee)) return 1; /* implicit python call */
+            }
             for (AstList* arg = n->as.call.args; arg; arg = arg->next) {
                 if (expr_has_python_cast(ctx, arg->node)) return 1;
             }
             return 0;
+        }
         case AST_TABLE_LIT:
             for (AstList* el = n->as.table.elements; el; el = el->next) {
                 if (expr_has_python_cast(ctx, el->node)) return 1;
@@ -477,10 +487,27 @@ static void gen_expr(CodegenCtx* ctx, AstNode* n) {
             gen_expr(ctx, n->as.malloc_call.size_expr);
             emit(ctx, "))");
             break;
+        case AST_GACAST_EXPR:
+            /* Read back the value written by the python bridge */
+            if (n->as.py_cast.target_type == GTYPE_RAT32 || n->as.py_cast.target_type == GTYPE_RAT64 || n->as.py_cast.target_type == GTYPE_RAT128) {
+                emit(ctx, "({ double _gv = 0.0; FILE* _gf = fopen(\"_gampil_pyout.txt\", \"r\"); if(_gf){ fscanf(_gf, \"%%lf\", &_gv); fclose(_gf); } _gv; })");
+            } else {
+                emit(ctx, "({ long long _gv = 0; FILE* _gf = fopen(\"_gampil_pyout.txt\", \"r\"); if(_gf){ fscanf(_gf, \"%%lld\", &_gv); fclose(_gf); } _gv; })");
+            }
+            break;
+        case AST_PYCAST_EXPR:
+            /* C side initialization is 0 for dynamic variables */
+            emit(ctx, "0");
+            break;
         case AST_CALL_EXPR: {
             Symbol* func_sym = NULL;
             if (n->as.call.callee) {
                 func_sym = sym_lookup(ctx->symtable, n->as.call.callee);
+            }
+
+            if (n->as.call.callee && !func_sym && !is_asm_instruction(n->as.call.callee)) {
+                emit(ctx, "0"); /* implicit python call evaluated in bridge */
+                break;
             }
 
             if (n->as.call.callee && !func_sym && is_asm_instruction(n->as.call.callee)) {
@@ -733,6 +760,16 @@ static void ast_to_python(AstNode* n, char* buf, size_t maxlen) {
             ast_to_python(n->as.index.index, buf, maxlen);
             strncat(buf, "]", maxlen);
             break;
+        case AST_PYCAST_EXPR:
+            strncat(buf, n->as.py_cast.py_type, maxlen);
+            strncat(buf, "(", maxlen);
+            ast_to_python(n->as.py_cast.expr, buf, maxlen);
+            strncat(buf, ")", maxlen);
+            break;
+        case AST_GACAST_EXPR:
+            /* Just get the value when casting back to gampil */
+            ast_to_python(n->as.py_cast.expr, buf, maxlen);
+            break;
         case AST_FIELD_EXPR:
             ast_to_python(n->as.field_access.object, buf, maxlen);
             snprintf(tmp, sizeof(tmp), ".%s", n->as.field_access.field);
@@ -742,12 +779,18 @@ static void ast_to_python(AstNode* n, char* buf, size_t maxlen) {
     }
 }
 
-/* Collect Python snippet from a `let` var_decl */
 static char* build_py_let_snippet(AstNode* n) {
     char buf[4096] = {0};
     snprintf(buf, sizeof(buf), "%s = ", n->as.var_decl.name);
     ast_to_python(n->as.var_decl.initializer, buf, sizeof(buf)-1);
     strncat(buf, "\n", sizeof(buf)-1);
+    
+    if (n->as.var_decl.initializer && n->as.var_decl.initializer->kind == AST_GACAST_EXPR) {
+        strncat(buf, "with open('_gampil_pyout.txt', 'w') as _f:\n", sizeof(buf)-1);
+        strncat(buf, "    _f.write(str(", sizeof(buf)-1);
+        strncat(buf, n->as.var_decl.name, sizeof(buf)-1);
+        strncat(buf, "))\n", sizeof(buf)-1);
+    }
     return strdup(buf);
 }
 
@@ -757,6 +800,17 @@ static void gen_node(CodegenCtx* ctx, AstNode* n) {
     switch (n->kind) {
         /* ── Variable declaration ─────────────────────────── */
         case AST_VAR_DECL: {
+            /* Python bridge only for explicit Python casts in initializer */
+            if (n->as.var_decl.initializer && expr_has_python_cast(ctx, n->as.var_decl.initializer)) {
+                char* snippet = build_py_let_snippet(n);
+                if (ctx->py_count >= ctx->py_cap) {
+                    ctx->py_cap = ctx->py_cap == 0 ? 16 : ctx->py_cap * 2;
+                    ctx->py_snippets = (char**)realloc(ctx->py_snippets, ctx->py_cap * sizeof(char*));
+                }
+                ctx->py_snippets[ctx->py_count++] = snippet;
+                emit_pyruntime_call(ctx, snippet);
+            }
+
             emit_indent(ctx);
             emit_type_decl(ctx, n->as.var_decl.type, n->as.var_decl.is_pointer,
                            n->as.var_decl.array_size, n->as.var_decl.name, n);
@@ -768,15 +822,6 @@ static void gen_node(CodegenCtx* ctx, AstNode* n) {
                 emit(ctx, " = {0}");
             }
             emit(ctx, ";\n");
-            
-            /* Python bridge only for explicit Python casts in initializer */
-            if (n->as.var_decl.initializer && expr_has_python_cast(ctx, n->as.var_decl.initializer)) {
-                char buf[4096] = {0};
-                snprintf(buf, sizeof(buf), "%s = ", n->as.var_decl.name);
-                ast_to_python(n->as.var_decl.initializer, buf, sizeof(buf)-1);
-                strncat(buf, "\n", sizeof(buf)-1);
-                emit_pyruntime_call(ctx, buf);
-            }
             
             sym_declare(ctx->symtable, n->as.var_decl.name,
                         n->as.var_decl.type, n->as.var_decl.is_pointer,
@@ -1165,8 +1210,8 @@ static void emit_forward_decls(CodegenCtx* ctx, AstNode* program) {
         GampilType ret = n->as.func_decl.ret_type;
         if (ret == GTYPE_BITOFF) emit(ctx, "void");
         else emit(ctx, "%s", gtype_to_c(ret));
-        if (strcmp(n->as.func_decl.name, "main") == 0) {
-            emit(ctx, " _gampil_main(");
+        if (strcmp(n->as.func_decl.name, "algo") == 0) {
+            emit(ctx, " _gampil_algo(");
         } else {
             emit(ctx, " %s(", n->as.func_decl.name);
         }
@@ -1209,7 +1254,7 @@ int codegen_run(CodegenCtx* ctx, AstNode* program) {
         AstNode* n = d->node;
         if (!n) continue;
         if (n->kind == AST_FUNC_DECL &&
-            strcmp(n->as.func_decl.name, "main") == 0) {
+            strcmp(n->as.func_decl.name, "algo") == 0) {
             main_func = n;
         } else {
             others = astlist_append(others, n);
@@ -1224,10 +1269,10 @@ int codegen_run(CodegenCtx* ctx, AstNode* program) {
 
     /* Generate main function */
     if (main_func) {
-        /* Gampil main becomes _gampil_main */
+        /* Gampil algo becomes _gampil_algo */
         GampilType ret = main_func->as.func_decl.ret_type;
-        if (ret == GTYPE_BITOFF) emit(ctx, "\nvoid _gampil_main(");
-        else emit(ctx, "\n%s _gampil_main(", gtype_to_c(ret));
+        if (ret == GTYPE_BITOFF) emit(ctx, "\nvoid _gampil_algo(");
+        else emit(ctx, "\n%s _gampil_algo(", gtype_to_c(ret));
         
         int first = 1;
         for (AstList* pa = main_func->as.func_decl.params; pa; pa = pa->next) {
@@ -1252,24 +1297,13 @@ int codegen_run(CodegenCtx* ctx, AstNode* program) {
         emit(ctx, "\nint main(int argc, char** argv) {\n");
         ctx->indent++;
         emit_line(ctx, "(void)argc;");
-        emit_line(ctx, "_gampil_main((unsigned char**)argv);");
+        emit_line(ctx, "_gampil_algo((unsigned char**)argv);");
         emit_line(ctx, "return 0;");
         ctx->indent--;
         emit(ctx, "}\n");
     } else {
-        /* No explicit main — wrap top-level statements */
-        emit(ctx, "\nint main(int argc, char** argv) {\n");
-        ctx->indent++;
-        emit_line(ctx, "(void)argc;");
-        emit_line(ctx, "(void)argv;");
-        for (AstList* d = program->as.program.decls; d; d = d->next) {
-            AstNode* n = d->node;
-            if (n && n->kind != AST_FUNC_DECL)
-                gen_node(ctx, n);
-        }
-        emit_line(ctx, "return 0;");
-        ctx->indent--;
-        emit(ctx, "}\n");
+        /* This should not be reached due to semantic analyzer check, but just in case */
+        emit(ctx, "\n#error \"Missing entry function 'algo'\"\n");
     }
 
     /* Cleanup temp lists */

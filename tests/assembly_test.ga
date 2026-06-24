@@ -1,6 +1,6 @@
 ` Gampil Assembly and Registers Test `
 
-bitOff main[asc8()() args]:
+bitOff algo[asc8()() args]:
     num16 a, num16 b, num16 c be 1_000
     printf ["a: %d, b: %d, c: %d\n", a, b, c]
 

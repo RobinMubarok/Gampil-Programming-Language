@@ -6,16 +6,16 @@
 #include <complex.h>
 
 /* --- Forward Declarations --- */
-void _gampil_main(unsigned char** args);
+void _gampil_algo(unsigned char** args);
 
 
-void _gampil_main(unsigned char** args) {
+void _gampil_algo(unsigned char** args) {
     (void)args;
     printf("Hello, World!\\n");
 }
 
 int main(int argc, char** argv) {
     (void)argc;
-    _gampil_main((unsigned char**)argv);
+    _gampil_algo((unsigned char**)argv);
     return 0;
 }

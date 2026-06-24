@@ -76,6 +76,25 @@ const char* gtype_name(GampilType t) {
 
 int gtype_is_dynamic(GampilType t) { return t == GTYPE_DYNAMIC; }
 
+GampilType str_to_gtype(const char* name) {
+    if (strcmp(name, "bitOff") == 0) return GTYPE_BITOFF;
+    if (strcmp(name, "bitOn") == 0) return GTYPE_BITON;
+    if (strcmp(name, "asc8") == 0) return GTYPE_ASC8;
+    if (strcmp(name, "asc16") == 0) return GTYPE_ASC16;
+    if (strcmp(name, "asc32") == 0) return GTYPE_ASC32;
+    if (strcmp(name, "asc64") == 0) return GTYPE_ASC64;
+    if (strcmp(name, "num8") == 0) return GTYPE_NUM8;
+    if (strcmp(name, "num16") == 0) return GTYPE_NUM16;
+    if (strcmp(name, "num32") == 0) return GTYPE_NUM32;
+    if (strcmp(name, "num64") == 0) return GTYPE_NUM64;
+    if (strcmp(name, "rat32") == 0) return GTYPE_RAT32;
+    if (strcmp(name, "rat64") == 0) return GTYPE_RAT64;
+    if (strcmp(name, "rat128") == 0) return GTYPE_RAT128;
+    if (strcmp(name, "field") == 0) return GTYPE_FIELD;
+    if (strcmp(name, "let") == 0) return GTYPE_DYNAMIC;
+    return GTYPE_UNKNOWN;
+}
+
 /* ── AstNode allocation ─────────────────────────────────────── */
 
 AstNode* ast_new(AstKind kind, int line, int col) {
@@ -175,6 +194,14 @@ void ast_print(AstNode* node, int indent) {
         case AST_CAST_EXPR:
             printf("AST_CAST_EXPR target=%s ptr=%d\n", gtype_to_c(node->as.cast_expr.target_type), node->as.cast_expr.is_pointer);
             ast_print(node->as.cast_expr.expr, indent+1);
+            break;
+        case AST_GACAST_EXPR:
+            printf("AST_GACAST_EXPR target=%s\n", gtype_to_c(node->as.py_cast.target_type));
+            ast_print(node->as.py_cast.expr, indent+1);
+            break;
+        case AST_PYCAST_EXPR:
+            printf("AST_PYCAST_EXPR target=%s\n", node->as.py_cast.py_type);
+            ast_print(node->as.py_cast.expr, indent+1);
             break;
         case AST_RETURN_STMT:
             printf("RETURN\n");
@@ -341,6 +368,11 @@ void ast_free(AstNode* node) {
         case AST_PYRUNTIME_STMT: free(node->as.pyruntime.snippet); break;
         case AST_MALLOC_CALL: ast_free(node->as.malloc_call.size_expr); break;
         case AST_CAST_EXPR: ast_free(node->as.cast_expr.expr); break;
+        case AST_GACAST_EXPR: ast_free(node->as.py_cast.expr); break;
+        case AST_PYCAST_EXPR: 
+            free(node->as.py_cast.py_type);
+            ast_free(node->as.py_cast.expr);
+            break;
         case AST_EXPR_STMT: ast_free(node->as.expr_stmt.expr); break;
         case AST_ELSE_EXPR: break;
         default: break;

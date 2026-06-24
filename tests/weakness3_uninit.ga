@@ -1,0 +1,4 @@
+bitOff algo[]:
+    num16 x
+    printf ["%d\n", x]
+ok

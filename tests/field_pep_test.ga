@@ -1,6 +1,6 @@
 `GAMPIL PROGRAMMING LANGUAGE - FIELD AND PEP TEST`
 
-bitOff main[]:
+bitOff algo[]:
     `Test fields`
     field({num16, rat32}) my_struct be {5, 3.14}
     

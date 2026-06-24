@@ -1,4 +1,4 @@
-bitOff main[]:
+bitOff algo[]:
     \ Mixed types and multi-initialization
     num8 a, num16 b be 3, 5
     printf["a = %d, b = %d\n", a, b]

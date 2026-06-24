@@ -1,6 +1,6 @@
 \ Loop test for Gampil compiler
 
-bitOff main[asc8()() args]:
+bitOff algo[asc8()() args]:
     \ Foreach loop over static array
     num16(5) nums be {10, 20, 30, 40, 50}
     redo nums as num16 val:

@@ -1,6 +1,6 @@
 \ Arithmetic test for Gampil compiler
 
-bitOff main[asc8()() args]:
+bitOff algo[asc8()() args]:
     num16 x be 10
     num16 y be 3
 

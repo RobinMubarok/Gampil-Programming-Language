@@ -6,10 +6,10 @@
 #include <complex.h>
 
 /* --- Forward Declarations --- */
-void _gampil_main();
+void _gampil_algo();
 
 
-void _gampil_main() {
+void _gampil_algo() {
     struct { long _0; double _1; } my_struct = {5, 3.14};
     long long my_dynamic = 100;
     my_dynamic += 50;
@@ -23,6 +23,6 @@ void _gampil_main() {
 
 int main(int argc, char** argv) {
     (void)argc;
-    _gampil_main((unsigned char**)argv);
+    _gampil_algo((unsigned char**)argv);
     return 0;
 }

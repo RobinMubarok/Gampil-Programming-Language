@@ -6,10 +6,10 @@
 #include <complex.h>
 
 /* --- Forward Declarations --- */
-void _gampil_main(unsigned char** args);
+void _gampil_algo(unsigned char** args);
 
 
-void _gampil_main(unsigned char** args) {
+void _gampil_algo(unsigned char** args) {
     (void)args;
     long _varmult_4_5_shared = 1000;
     short a = _varmult_4_5_shared;
@@ -24,6 +24,6 @@ void _gampil_main(unsigned char** args) {
 
 int main(int argc, char** argv) {
     (void)argc;
-    _gampil_main((unsigned char**)argv);
+    _gampil_algo((unsigned char**)argv);
     return 0;
 }

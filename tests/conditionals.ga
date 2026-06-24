@@ -1,4 +1,4 @@
-bitOff main[]:
+bitOff algo[]:
     num32 x be 10
 
     if x < 5:

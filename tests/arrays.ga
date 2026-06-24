@@ -1,6 +1,6 @@
 \ Array / Table / Pointer test for Gampil compiler
 
-bitOff main[asc8()() args]:
+bitOff algo[asc8()() args]:
     \ Static array (table row type)
     num16(3) arr be {1, 3, 5}
     printf ["arr[0] = %d\n", arr(0)]

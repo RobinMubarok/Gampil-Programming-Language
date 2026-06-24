@@ -1,6 +1,6 @@
 `GAMPIL - Test native f-strings and Python casting`
 
-bitOff main[asc8()() args]:
+bitOff algo[asc8()() args]:
     num32 b be 42
     asc8() greeting be f"hello {b}\n"
     printf ["%s", greeting]

@@ -1,0 +1,56 @@
+\ ============================================================
+\  Gampil Programming Language — Standard Library
+\  stdlib.gmp
+\ ============================================================
+
+\ Print a Gampil variable by casting to Python
+num64 std_print_num[num64 val]:
+    let py_val be int[val]
+    print[py_val]
+    return 0
+ok
+
+\ Print a Python variable natively using Python print
+num64 std_print_py[let py_val]:
+    print[py_val]
+    return 0
+ok
+
+\ Calculate absolute value from a Python variable, cast to Gampil
+num64 std_abs[let py_val]:
+    num64 g_val be znum64[py_val]
+    if g_val < 0:
+        g_val be -g_val
+    ok
+    return g_val
+ok
+
+\ Assembly addition for fast path
+num64 std_add_asm[num64 a, num64 b]:
+    num64 res
+    mov[res, a]
+    add[res, b]
+    return res
+ok
+
+\ Assembly subtraction for fast path
+num64 std_sub_asm[num64 a, num64 b]:
+    num64 res
+    mov[res, a]
+    sub[res, b]
+    return res
+ok
+
+\ Get length of a Python string/list and return as Gampil num64
+num64 std_len[let py_iterable]:
+    let py_len be len[py_iterable]
+    num64 g_len be znum64[py_len]
+    return g_len
+ok
+
+\ System exit
+num64 std_exit[num64 code]:
+    let py_code be int[code]
+    exit[py_code]
+    return 0
+ok

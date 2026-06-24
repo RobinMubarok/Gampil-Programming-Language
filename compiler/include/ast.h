@@ -56,6 +56,10 @@ typedef enum {
     AST_MALLOC_CALL,    /* malloc[n]                               */
     AST_CAST_EXPR,      /* type()[expr]                            */
 
+    /* Python/Gampil Casting */
+    AST_GACAST_EXPR,    /* znum8[py_var]                           */
+    AST_PYCAST_EXPR,    /* int[ga_var]                             */
+
     /* Multi-Assignment (varmult) */
     AST_MULTI_ASSIGN,   /* num8 a, b be 3, 5 */
 
@@ -240,6 +244,13 @@ struct AstNode {
             AstNode*   expr;
         } cast_expr;
 
+        /* AST_GACAST_EXPR / AST_PYCAST_EXPR */
+        struct {
+            GampilType target_type; /* only for GACAST */
+            char*      py_type;     /* only for PYCAST */
+            AstNode*   expr;
+        } py_cast;
+
         /* AST_EXPR_STMT */
         struct { AstNode* expr; } expr_stmt;
 
@@ -258,6 +269,7 @@ void      ast_free(AstNode* node);
 const char* gtype_to_c(GampilType t);   /* "int", "long", etc.   */
 const char* gtype_name(GampilType t);   /* "num16", "rat32", etc. */
 GampilType  tok_to_gtype(TokenType t);  /* token → GampilType    */
+GampilType  str_to_gtype(const char* name);
 int         gtype_is_dynamic(GampilType t); /* 1 if `let`         */
 
 #endif /* GAMPIL_AST_H */

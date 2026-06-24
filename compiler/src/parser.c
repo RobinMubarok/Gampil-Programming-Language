@@ -101,6 +101,18 @@ static GampilType parse_type_spec(Parser* p, int* is_pointer, int* array_size);
 
 /* ── Parser constructor ─────────────────────────────────────── */
 
+static int is_python_cast_name(const char* name) {
+    static const char* py_casts[] = {
+        "int", "float", "str", "list", "set", "tuple", "dict",
+        "frozenset", "bool", "complex", "bytes", "bytearray",
+        "range", "type", NULL
+    };
+    for (int i = 0; py_casts[i]; i++) {
+        if (strcmp(name, py_casts[i]) == 0) return 1;
+    }
+    return 0;
+}
+
 Parser* parser_new(Lexer* lexer) {
     Parser* p = (Parser*)calloc(1, sizeof(Parser));
     p->lexer   = lexer;
@@ -353,6 +365,25 @@ static AstNode* parse_primary(Parser* p) {
             }
             consume(p, TOK_RBRACKET, "expected ']'");
             n->as.call.args = args;
+            
+            if (n->kind == AST_CALL_EXPR) {
+                if (is_python_cast_name(name)) {
+                    n->kind = AST_PYCAST_EXPR;
+                    n->as.py_cast.py_type = name;
+                    n->as.py_cast.expr = args ? args->node : NULL;
+                    if (args) free(args);
+                } else if (name[0] == 'z') {
+                    GampilType t = str_to_gtype(name + 1);
+                    if (t != GTYPE_UNKNOWN) {
+                        n->kind = AST_GACAST_EXPR;
+                        n->as.py_cast.target_type = t;
+                        n->as.py_cast.expr = args ? args->node : NULL;
+                        free(name);
+                        if (args) free(args);
+                    }
+                }
+            }
+
             /* Post-call: chained .field or (index) */
             while (check(p, TOK_DOT) || check(p, TOK_LPAREN)) {
                 if (check(p, TOK_DOT)) {
@@ -963,6 +994,25 @@ static AstNode* parse_stmt(Parser* p) {
             }
             consume(p, TOK_RBRACKET, "expected ']'");
             n->as.call.args = args;
+            
+            if (n->kind == AST_CALL_EXPR) {
+                if (is_python_cast_name(name)) {
+                    n->kind = AST_PYCAST_EXPR;
+                    n->as.py_cast.py_type = name;
+                    n->as.py_cast.expr = args ? args->node : NULL;
+                    if (args) free(args);
+                } else if (name[0] == 'z') {
+                    GampilType t = str_to_gtype(name + 1);
+                    if (t != GTYPE_UNKNOWN) {
+                        n->kind = AST_GACAST_EXPR;
+                        n->as.py_cast.target_type = t;
+                        n->as.py_cast.expr = args ? args->node : NULL;
+                        free(name);
+                        if (args) free(args);
+                    }
+                }
+            }
+
             AstNode* es = ast_new(AST_EXPR_STMT, iln, icol);
             es->as.expr_stmt.expr = n;
             return es;

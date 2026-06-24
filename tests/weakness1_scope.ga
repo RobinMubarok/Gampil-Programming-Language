@@ -1,0 +1,12 @@
+` Test scoping and undefined variable `
+
+bitOff algo[]:
+    num16 a be 10
+    if a > 5:
+        num16 b be 20
+        printf ["%d\n", a]
+    but
+    ok
+    
+    printf ["%d\n", b] \ Error? b is out of scope.
+ok

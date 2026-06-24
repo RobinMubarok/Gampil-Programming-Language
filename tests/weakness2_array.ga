@@ -1,0 +1,4 @@
+bitOff algo[]:
+    num16(3) arr be {10, 20, 30}
+    printf ["%d\n", arr(5)]
+ok
