@@ -1,0 +1,95 @@
+
+`
+
+we introduced Chemistry Oriented Programming (COP) instead of OOP.
+
+this paradigm inspired by chemistry reaction.
+
+important keys:
+-	vessel
+-	after
+-	solvent
+-	solute
+-	catalyst
+-	its
+-	plan
+-	elm
+-	mix
+
+`
+
+vessel bottle1
+vessel bottle2 after bottle1
+
+\ parent class (solvent)
+solvent bottle1 Hydrogen: 
+
+	num8 a, num8 _b, num8 c
+        bitOff constructor[Hydrogen its, num8 a, num8 b, num8 c]:
+		its.a be a
+		its._b be b
+		its.c be c
+        	ok
+
+	ok
+
+\ abstract parent class (solute)
+solute bottle1 Nitrogen: 
+
+	num8 d, num8 _e, num8 f
+        bitOff constructor[Nitrogen its]:
+		its.d be d
+		its._e be e
+		its.f be f
+        	ok
+
+	\ plans are abstract method
+	plan num8 addedBy[Nitrogen its]
+
+	ok
+
+\ interface
+catalyst bottle1 Oxygen: 
+	bitOff hello[]
+	ok
+
+\ child will inherits all bottle1's
+solvent bottle2 Ammonia:
+
+	num8 g, num8 h
+        bitOff constructor[Ammonia its, num8 a, num8 b, num8 c]:
+		elm.Hydrogen[a, b, c]
+		elm.Nitrogen[]
+		its.g be 7
+		its.h be 9
+        	ok
+
+
+	num8 addedBy[Ammonia its]:
+		return its.g + its.h
+        	ok
+
+	bitOff hello[]:
+		printf ["hello"]
+		ok
+
+	ok
+
+\ if you want to mix specific vessel, use 'mix'
+solvent bottle2 Water mix [Hydrogen first, Hydrogen second, Nitrogen third]:
+	
+	num8 g, num8 h
+        bitOff constructor[Water its, num8 a, num8 b, num8 c]:
+		first[a, b, c]
+		second[a, b, c]
+		third[]
+		its.g be 7
+		its.h be 9
+        	ok
+
+
+	num8 addedBy[Water its]:
+		return its.g + its.h
+        	ok
+
+	ok
