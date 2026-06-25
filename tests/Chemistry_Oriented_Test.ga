@@ -93,3 +93,9 @@ solvent bottle2 Water mix [Hydrogen first, Hydrogen second, Nitrogen third]:
         	ok
 
 	ok
+
+\ main
+bitOff algo [num8()() args]:
+	Water x be Water[1, 2, 9]
+	num8 y be x.first.a
+	ok
