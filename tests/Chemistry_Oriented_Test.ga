@@ -33,8 +33,8 @@ solvent bottle1 Hydrogen:
 
 	ok
 
-\ abstract parent class (solute)
-solute bottle1 Nitrogen: 
+\ abstract parent class (catalyst)
+catalyst bottle1 Nitrogen: 
 
 	num8 d, num8 _e, num8 f
         bitOff constructor[Nitrogen its]:
@@ -49,7 +49,7 @@ solute bottle1 Nitrogen:
 	ok
 
 \ interface
-catalyst bottle1 Oxygen: 
+solute bottle1 Oxygen: 
 	bitOff hello[]
 	ok
 
