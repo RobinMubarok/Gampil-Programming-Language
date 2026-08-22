@@ -96,6 +96,9 @@ solvent bottle2 Water mix [Hydrogen first, Hydrogen second, Nitrogen third]:
 
 \ main
 bitOff algo [num8()() args]:
-	Water x be Water[1, 2, 9]
-	num8 y be x.first.a
+	let substance be Hydrogen[1, 2, 3] == Hydrogen[4,2,3] == Nitrogen [] / '==' keyword is for reaction
+	print [substance.first.a] / reactions are only have attributes, no longer had methods
+	Water x2 be Water[substance] / you can create a substance with reactions, which means adding methods
+	Water x1 be Water[1, 2, 9] / or with constructor
+	num8 y be x1.first.a
 	ok
