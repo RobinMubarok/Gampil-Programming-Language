@@ -1,0 +1,9 @@
+\ 'cite' used for including lib or packages 'cite:<file extension> "<file name>"
+
+cite:. "iostd"
+cite:h "conio"
+
+num16 algo []:
+    print ["Hello World"]
+  ok
+
